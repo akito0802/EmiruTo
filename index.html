@@ -130,7 +130,49 @@
           <label class="switch-row"><span>推しの一言</span><input id="oshiToggle" type="checkbox" /></label>
           <label class="switch-row"><span>ステルスモード</span><input id="stealthToggle" type="checkbox" /></label>
           <label class="switch-row"><span>今日は静かに</span><input id="quietToggle" type="checkbox" /></label>
-          <label>推し画像（端末内のみ保存）<input id="oshiUpload" type="file" accept="image/*" /></label>
+          <div class="oshi-library-settings">
+            <div class="settings-subhead">
+              <div><strong>笑瑠ビジュアル</strong><span>場面ごとに複数登録してランダム表示</span></div>
+            </div>
+            <label>画像カテゴリ
+              <select id="oshiCategorySelect">
+                <option value="normal">通常</option>
+                <option value="morning">おはよう</option>
+                <option value="day">昼</option>
+                <option value="night">夜</option>
+                <option value="lateNight">深夜</option>
+                <option value="happy">喜び</option>
+                <option value="bigHappy">大喜び</option>
+                <option value="relief">ほっとした</option>
+                <option value="cheer">応援</option>
+                <option value="sad">しょんぼり</option>
+                <option value="pressure">ちょい圧</option>
+                <option value="gentle">しんどいモード</option>
+                <option value="rare">レアキュン</option>
+                <option value="superRare">超レアキュン</option>
+                <option value="spring">春</option>
+                <option value="summer">夏</option>
+                <option value="autumn">秋</option>
+                <option value="winter">冬</option>
+                <option value="rain">雨</option>
+                <option value="tanabata">七夕</option>
+                <option value="halloween">ハロウィン</option>
+                <option value="christmas">クリスマス</option>
+                <option value="newyear">正月</option>
+                <option value="apr22">4月22日</option>
+                <option value="hot">暑い日</option>
+                <option value="cold">寒い日</option>
+              </select>
+            </label>
+            <label class="upload-zone">
+              <span>＋ このカテゴリに画像を追加</span>
+              <small>複数選択OK・端末内だけに保存</small>
+              <input id="oshiUpload" type="file" accept="image/*" multiple />
+            </label>
+            <div id="oshiLibraryCount" class="library-count"></div>
+            <div id="oshiLibraryGrid" class="oshi-library-grid"></div>
+            <button id="oshiClearCategory" type="button" class="danger-btn">このカテゴリの画像を全部削除</button>
+          </div>
           <div class="settings-actions">
             <button id="exportJsonBtn" class="secondary-btn">JSONを書き出す</button>
             <button id="exportCsvBtn" class="secondary-btn">CSVを書き出す</button>
@@ -219,7 +261,7 @@
     </dialog>
 
     <div id="reaction" class="reaction hidden" role="status">
-      <div id="reactionAvatar" class="reaction-avatar">🧡</div>
+      <div id="reactionAvatar" class="reaction-avatar"><img id="reactionImage" class="hidden" alt="" /><span id="reactionFallback">🧡</span></div>
       <div><strong id="reactionTitle">えらい！</strong><p id="reactionText"></p></div>
     </div>
   </div>
