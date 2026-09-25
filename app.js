@@ -41,6 +41,9 @@
   let longPressTimer = null;
   let reactionTimer = null;
   let calendarFilter = "all";
+  let oshiCache = {};
+  const OSHI_DB = "emiruto_media_v1";
+  const OSHI_STORE = "oshiImages";
 
   function loadState(){
     try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
@@ -53,8 +56,9 @@
     return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,"0")).join("");
   }
 
-  function init(){
+  async function init(){
     $("#dateLabel").textContent = new Intl.DateTimeFormat("ja-JP",{month:"long",day:"numeric",weekday:"short"}).format(new Date());
+    await loadOshiLibrary();
     bind();
     applyTheme();
     renderAll();
@@ -114,6 +118,12 @@
     $("#stealthToggle").addEventListener("change",e=>{state.stealth=e.target.checked;saveState();applyTheme();renderSettings();});
     $("#quietToggle").addEventListener("change",e=>{state.quiet=e.target.checked;saveState();});
     $("#oshiUpload").addEventListener("change",handleOshiUpload);
+    $("#oshiCategorySelect").addEventListener("change",renderOshiLibrary);
+    $("#oshiClearCategory").addEventListener("click",clearSelectedOshiCategory);
+    $("#oshiLibraryGrid").addEventListener("click",async e=>{
+      const b=e.target.closest("[data-remove-oshi]"); if(!b) return;
+      await deleteOshiImage(b.dataset.removeOshi);
+    });
     $("#exportJsonBtn").addEventListener("click",exportJson);
     $("#exportCsvBtn").addEventListener("click",exportCsv);
     $("#resetDemoBtn").addEventListener("click",resetData);
@@ -187,9 +197,8 @@
       "今日もひとつずついこ〜！";
     $("#oshiMessage").textContent=msg;
     $("#oshiPanel").classList.toggle("hidden",!state.showOshi||state.stealth);
-    $("#oshiImage").classList.toggle("hidden",!state.oshiImage);
-    $("#oshiFallback").classList.toggle("hidden",!!state.oshiImage);
-    if(state.oshiImage) $("#oshiImage").src=state.oshiImage;
+    const homeVisual = pickOshiImage(homeOshiCategory(hour,gentle));
+    setOshiElement($("#oshiImage"), $("#oshiFallback"), homeVisual);
 
     $("#minimalToggle").classList.toggle("active",state.minimalOnly);
     const filteredToday=state.minimalOnly?todayTasks.filter(t=>t.minimal):todayTasks;
@@ -281,18 +290,20 @@
   function showTaskReaction(t){
     if(state.quiet)return;
     let text="ちゃんと終わらせたのえらい〜！";
-    if(isGentle()) text="ひとつ終わったね。今日はそれだけでも十分すごいよ🧡";
+    let visualCategory="happy";
+    if(isGentle()){ text="ひとつ終わったね。今日はそれだけでも十分すごいよ🧡"; visualCategory="gentle"; }
     else if(t.dueDate){
       const diff=(new Date(t.dueDate+"T00:00:00")-new Date(today()+"T00:00:00"))/86400000;
-      if(diff>=2) text="え、もう終わったの！？早すぎてびっくりした🧡";
-      else if(diff===0) text="間に合った〜！ちゃんとやり切ったのえらい！";
-      else if(diff<0) text="遅れても、ちゃんと終わらせたのほんとにえらいよ。";
+      if(diff>=2){ text="え、もう終わったの！？早すぎてびっくりした🧡"; visualCategory="bigHappy"; }
+      else if(diff===0){ text="間に合った〜！ちゃんとやり切ったのえらい！"; visualCategory="relief"; }
+      else if(diff<0){ text="遅れても、ちゃんと終わらせたのほんとにえらいよ。"; visualCategory="relief"; }
     }
-    if(t.priority==="urgent") text+=" 大事なやつ終わったの、かなりすごい。";
-    showReaction("やったぁ！",text);
+    if(t.priority==="urgent"){ text+=" 大事なやつ終わったの、かなりすごい。"; visualCategory="bigHappy"; }
+    showReaction("やったぁ！",text,visualCategory);
   }
-  function showReaction(title,text){
+  function showReaction(title,text,visualCategory="normal"){
     $("#reactionTitle").textContent=title;$("#reactionText").textContent=text;
+    setOshiElement($("#reactionImage"), $("#reactionFallback"), pickOshiImage(visualCategory));
     $("#reaction").classList.remove("hidden");
     clearTimeout(reactionTimer);reactionTimer=setTimeout(()=>$("#reaction").classList.add("hidden"),4200);
   }
@@ -301,7 +312,7 @@
     clearTimeout(longPressTimer);
     longPressTimer=setTimeout(()=>{
       state.gentleUntil=addDays(today(),1);
-      saveState();renderHome();showReaction("今日はしんどいモード","今日は優しいメッセージだけにするね。無理しなくていいよ🧡");
+      saveState();renderHome();showReaction("今日はしんどいモード","今日は優しいメッセージだけにするね。無理しなくていいよ🧡","gentle");
     },900);
   }
   function cancelGentlePress(){clearTimeout(longPressTimer);}
@@ -323,7 +334,7 @@
       ];
       const text=messages[Math.floor(Math.random()*messages.length)];
       if(superRare&&!state.rareMemories.some(x=>x.text===text)){state.rareMemories.push({id:uid(),text,date:today()});saveState();}
-      showReaction(superRare?"…ねえ🧡":"ちょっとだけ",text);
+      showReaction(superRare?"…ねえ🧡":"ちょっとだけ",text,superRare?"superRare":"rare");
     }
   }
 
@@ -383,17 +394,99 @@
     let n=0,d=today();while(dates.has(d)){n++;d=addDays(d,-1);}return n;
   }
 
+  function openOshiDb(){
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(OSHI_DB,1);
+      req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains(OSHI_STORE)){ const st=db.createObjectStore(OSHI_STORE,{keyPath:"id"}); st.createIndex("category","category",{unique:false}); } };
+      req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+    });
+  }
+  async function loadOshiLibrary(){
+    try{
+      const db=await openOshiDb();
+      const items=await new Promise((resolve,reject)=>{const tx=db.transaction(OSHI_STORE,"readonly");const req=tx.objectStore(OSHI_STORE).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error);});
+      oshiCache={}; items.forEach(item=>(oshiCache[item.category]??=[]).push(item)); db.close();
+    }catch(e){ console.warn("Oshi library unavailable",e); oshiCache={}; }
+  }
+  async function putOshiImage(item){
+    const db=await openOshiDb();
+    await new Promise((resolve,reject)=>{const tx=db.transaction(OSHI_STORE,"readwrite");tx.objectStore(OSHI_STORE).put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+    db.close();
+  }
+  async function deleteOshiImage(id){
+    const db=await openOshiDb();
+    await new Promise((resolve,reject)=>{const tx=db.transaction(OSHI_STORE,"readwrite");tx.objectStore(OSHI_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+    db.close(); await loadOshiLibrary(); renderOshiLibrary(); renderHome(); showReaction("削除したよ","このカテゴリから画像を1枚外したよ。","normal");
+  }
+  async function clearSelectedOshiCategory(){
+    const category=$("#oshiCategorySelect").value;
+    const items=oshiCache[category]||[]; if(!items.length)return;
+    if(!confirm("このカテゴリの画像を全部削除する？"))return;
+    const db=await openOshiDb();
+    await new Promise((resolve,reject)=>{const tx=db.transaction(OSHI_STORE,"readwrite");const st=tx.objectStore(OSHI_STORE);items.forEach(x=>st.delete(x.id));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+    db.close(); await loadOshiLibrary(); renderOshiLibrary(); renderHome();
+  }
+  function compressImage(file){
+    return new Promise((resolve,reject)=>{
+      const url=URL.createObjectURL(file), img=new Image();
+      img.onload=()=>{
+        const max=1400, scale=Math.min(1,max/Math.max(img.width,img.height));
+        const c=document.createElement("canvas"); c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        URL.revokeObjectURL(url); resolve(c.toDataURL("image/jpeg",.88));
+      };
+      img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("image"));}; img.src=url;
+    });
+  }
+  function pickOshiImage(category="normal"){
+    const preferred=oshiCache[category]||[];
+    const fallback=oshiCache.normal||[];
+    const pool=preferred.length?preferred:fallback;
+    if(pool.length) return pool[Math.floor(Math.random()*pool.length)].dataUrl;
+    return state.oshiImage||null;
+  }
+  function setOshiElement(imgEl,fallbackEl,src){
+    if(!imgEl||!fallbackEl)return;
+    imgEl.classList.toggle("hidden",!src); fallbackEl.classList.toggle("hidden",!!src);
+    if(src) imgEl.src=src;
+  }
+  function homeOshiCategory(hour,gentle){
+    const md=today().slice(5);
+    if(gentle)return "gentle";
+    if(md==="04-22")return "apr22";
+    if(md==="07-07")return "tanabata";
+    if(md==="10-31")return "halloween";
+    if(md==="12-25")return "christmas";
+    if(md==="01-01")return "newyear";
+    if(hour<5)return "lateNight";
+    if(hour<11)return "morning";
+    if(hour<18)return "day";
+    return "night";
+  }
+  function renderOshiLibrary(){
+    const select=$("#oshiCategorySelect"); if(!select)return;
+    const category=select.value||"normal", items=oshiCache[category]||[];
+    $("#oshiLibraryCount").textContent=`${select.options[select.selectedIndex]?.text||category}：${items.length}枚登録`;
+    $("#oshiLibraryGrid").innerHTML=items.length?items.map(item=>`<div class="oshi-thumb"><img src="${item.dataUrl}" alt=""><button type="button" data-remove-oshi="${item.id}" aria-label="削除">×</button></div>`).join(""):'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
+  }
   function renderSettings(){
     $("#userNameInput").value=state.userName||"";
     $("#themeSelect").value=state.theme||"orange";
     $("#oshiToggle").checked=state.showOshi!==false;
     $("#stealthToggle").checked=!!state.stealth;
     $("#quietToggle").checked=!!state.quiet;
+    renderOshiLibrary();
   }
-  function handleOshiUpload(e){
-    const file=e.target.files?.[0];if(!file)return;
-    if(file.size>2_500_000){showReaction("画像がちょっと大きいかも","2.5MB以下がおすすめ！");return;}
-    const r=new FileReader();r.onload=()=>{state.oshiImage=r.result;saveState();renderHome();showReaction("推し画像を設定したよ🧡","これでEmiruTo感さらに出たね！");};r.readAsDataURL(file);
+  async function handleOshiUpload(e){
+    const files=[...(e.target.files||[])]; if(!files.length)return;
+    const category=$("#oshiCategorySelect").value||"normal";
+    let added=0;
+    for(const file of files){
+      if(!file.type.startsWith("image/"))continue;
+      try{ const dataUrl=await compressImage(file); await putOshiImage({id:uid(),category,dataUrl,createdAt:new Date().toISOString()}); added++; }catch{}
+    }
+    e.target.value=""; await loadOshiLibrary(); renderOshiLibrary(); renderHome();
+    showReaction("画像を追加したよ🧡",`${added}枚をこのカテゴリに登録したよ。`,category);
   }
   function download(name,type,content){
     const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);
