@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#ff7a1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="EmiruTo" />
+  <meta name="description" content="推しと一緒に毎日を進める、自分専用TODO・予定管理PWA" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>EmiruTo</title>
+</head>
+<body>
+  <div id="app">
+    <section id="lockScreen" class="lock-screen">
+      <div class="lock-card">
+        <div class="brand-mark">E<span>♥</span></div>
+        <h1>EmiruTo</h1>
+        <p id="lockMessage">4桁のパスコードを入力</p>
+        <div id="pinDots" class="pin-dots" aria-label="パスコード入力状況">
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <div id="keypad" class="keypad">
+          <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+          <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+          <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+          <button data-key="clear" class="key-small">C</button><button data-key="0">0</button><button data-key="back" class="key-small">⌫</button>
+        </div>
+        <button id="resetPinBtn" class="text-btn hidden">Googleで再設定（未接続）</button>
+      </div>
+    </section>
+
+    <main id="mainApp" class="shell hidden">
+      <header class="topbar">
+        <div>
+          <p id="dateLabel" class="eyebrow"></p>
+          <h1 id="greeting">おはよう、あなた</h1>
+        </div>
+        <button id="stealthQuick" class="icon-btn" aria-label="ステルスモード">◉</button>
+      </header>
+
+      <section id="homeView" class="view active">
+        <div id="oshiPanel" class="oshi-panel">
+          <button id="oshiAvatar" class="oshi-avatar" aria-label="推しメッセージ。長押しで隠しモード">
+            <img id="oshiImage" alt="" class="hidden" />
+            <span id="oshiFallback">🧡</span>
+          </button>
+          <div class="oshi-copy">
+            <span class="tiny-label">今日のひとこと</span>
+            <p id="oshiMessage">今日もひとつずついこ〜！</p>
+          </div>
+        </div>
+
+        <section class="stat-grid">
+          <article><strong id="todayRate">0%</strong><span>今日の達成率</span></article>
+          <article><strong id="streakCount">0日</strong><span>連続達成</span></article>
+        </section>
+
+        <section class="section-block">
+          <div class="section-head">
+            <div><span class="tiny-label">TODAY</span><h2>今日のTODO</h2></div>
+            <button id="minimalToggle" class="chip">☆ 最低限だけ</button>
+          </div>
+          <div id="overdueList" class="task-list"></div>
+          <div id="todayTaskList" class="task-list"></div>
+          <div id="emptyTasks" class="empty-state hidden">今日のTODOはまだないよ。<br>下の＋から追加してみよ🧡</div>
+        </section>
+
+        <section class="section-block">
+          <div class="section-head">
+            <div><span class="tiny-label">SCHEDULE</span><h2>今日の予定</h2></div>
+          </div>
+          <div id="todayEventList" class="event-list"></div>
+        </section>
+      </section>
+
+      <section id="calendarView" class="view">
+        <div class="page-head"><div><span class="tiny-label">CALENDAR</span><h2>カレンダー</h2></div></div>
+        <div class="calendar-card">
+          <div class="calendar-toolbar">
+            <button id="prevMonth" class="icon-btn">‹</button>
+            <strong id="monthLabel"></strong>
+            <button id="nextMonth" class="icon-btn">›</button>
+          </div>
+          <div class="week-row"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
+          <div id="monthGrid" class="month-grid"></div>
+        </div>
+        <div class="segmented" id="calendarFilter">
+          <button class="active" data-filter="all">全部</button>
+          <button data-filter="event">予定</button>
+          <button data-filter="task">TODO</button>
+        </div>
+        <div id="selectedDayLabel" class="selected-day-label"></div>
+        <div id="calendarDayContent"></div>
+      </section>
+
+      <section id="historyView" class="view">
+        <div class="page-head"><div><span class="tiny-label">HISTORY</span><h2>履歴・分析</h2></div></div>
+        <div class="stat-grid">
+          <article><strong id="monthRate">0%</strong><span>今月の達成率</span></article>
+          <article><strong id="monthDone">0</strong><span>今月の完了</span></article>
+          <article><strong id="monthPostponed">0</strong><span>延期回数</span></article>
+          <article><strong id="onTimeRate">0%</strong><span>期限内完了</span></article>
+        </div>
+        <section class="section-block">
+          <div class="section-head"><h2>直近7日</h2></div>
+          <div id="weekBars" class="week-bars"></div>
+        </section>
+        <section class="section-block">
+          <div class="section-head"><h2>日ごとの履歴</h2></div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+      </section>
+
+      <section id="settingsView" class="view">
+        <div class="page-head"><div><span class="tiny-label">SETTINGS</span><h2>設定</h2></div></div>
+        <div class="settings-card">
+          <label>呼ばれたい名前<input id="userNameInput" type="text" maxlength="20" placeholder="あなた" /></label>
+          <label>テーマ
+            <select id="themeSelect">
+              <option value="orange">Emiru Orange</option>
+              <option value="apricot">Apricot</option>
+              <option value="sunset">Sunset</option>
+            </select>
+          </label>
+          <label class="switch-row"><span>推しの一言</span><input id="oshiToggle" type="checkbox" /></label>
+          <label class="switch-row"><span>ステルスモード</span><input id="stealthToggle" type="checkbox" /></label>
+          <label class="switch-row"><span>今日は静かに</span><input id="quietToggle" type="checkbox" /></label>
+          <label>推し画像（端末内のみ保存）<input id="oshiUpload" type="file" accept="image/*" /></label>
+          <div class="settings-actions">
+            <button id="exportJsonBtn" class="secondary-btn">JSONを書き出す</button>
+            <button id="exportCsvBtn" class="secondary-btn">CSVを書き出す</button>
+            <button id="resetDemoBtn" class="danger-btn">データを初期化</button>
+          </div>
+          <div class="integration-note">
+            <strong>Googleログイン / Google Calendar</strong>
+            <span>未接続。後からFirebase / OAuthを追加できる構造で運用。</span>
+          </div>
+        </div>
+      </section>
+
+      <nav class="bottom-nav">
+        <button data-view="home" class="nav-btn active"><span>⌂</span><small>ホーム</small></button>
+        <button data-view="calendar" class="nav-btn"><span>▦</span><small>カレンダー</small></button>
+        <button id="addBtn" class="add-btn" aria-label="追加">＋</button>
+        <button data-view="history" class="nav-btn"><span>◫</span><small>履歴</small></button>
+        <button data-view="settings" class="nav-btn"><span>⚙</span><small>設定</small></button>
+      </nav>
+    </main>
+
+    <dialog id="addDialog" class="sheet">
+      <form method="dialog" id="addForm">
+        <div class="sheet-head">
+          <button value="cancel" class="text-btn">閉じる</button>
+          <strong id="sheetTitle">TODOを追加</strong>
+          <button id="saveItemBtn" value="default" class="primary-mini">保存</button>
+        </div>
+        <div class="segmented" id="addTypeTabs">
+          <button type="button" class="active" data-type="task">TODO</button>
+          <button type="button" data-type="event">予定</button>
+        </div>
+        <div id="taskFields" class="form-stack">
+          <label>タイトル<input id="taskTitle" type="text" placeholder="やることを入力" /></label>
+          <div class="two-col">
+            <label>期限<input id="taskDueDate" type="date" /></label>
+            <label>時刻<input id="taskDueTime" type="time" /></label>
+          </div>
+          <label>優先度
+            <select id="taskPriority">
+              <option value="normal">普通</option>
+              <option value="urgent">最優先</option>
+              <option value="high">高</option>
+              <option value="low">低</option>
+            </select>
+          </label>
+          <div class="two-col">
+            <label>進捗<input id="taskProgress" type="number" min="0" max="100" value="0" /></label>
+            <label>色<input id="taskColor" type="color" value="#ff8a2b" /></label>
+          </div>
+          <label>カテゴリ<input id="taskCategory" type="text" placeholder="大学、音楽 など" /></label>
+          <label>タグ<input id="taskTags" type="text" placeholder="急ぎ, PC作業" /></label>
+          <label>メモ<textarea id="taskMemo" rows="3" placeholder="任意"></textarea></label>
+          <div class="switch-grid">
+            <label class="switch-row"><span>今日やる</span><input id="taskToday" type="checkbox" checked /></label>
+            <label class="switch-row"><span>最低限 ⭐</span><input id="taskMinimal" type="checkbox" /></label>
+          </div>
+        </div>
+        <div id="eventFields" class="form-stack hidden">
+          <label>タイトル<input id="eventTitle" type="text" placeholder="予定を入力" /></label>
+          <div class="two-col">
+            <label>日付<input id="eventDate" type="date" /></label>
+            <label>開始<input id="eventStart" type="time" /></label>
+          </div>
+          <div class="two-col">
+            <label>終了<input id="eventEnd" type="time" /></label>
+            <label>色<input id="eventColor" type="color" value="#ff8a2b" /></label>
+          </div>
+          <label>場所<input id="eventLocation" type="text" placeholder="任意" /></label>
+          <label>同行者<input id="eventAttendee" type="text" placeholder="任意" /></label>
+          <label>メモ<textarea id="eventMemo" rows="3" placeholder="任意"></textarea></label>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="actionDialog" class="sheet small-sheet">
+      <div class="sheet-head"><span></span><strong>タスク操作</strong><button id="actionClose" class="text-btn">閉じる</button></div>
+      <div class="action-grid">
+        <button data-action="progress">進捗を変更</button>
+        <button data-action="postpone">明日に延期</button>
+        <button data-action="minimal">最低限を切替</button>
+        <button data-action="priority">優先度を変更</button>
+        <button data-action="someday">いつかへ</button>
+        <button data-action="delete" class="danger-outline">削除</button>
+      </div>
+    </dialog>
+
+    <div id="reaction" class="reaction hidden" role="status">
+      <div id="reactionAvatar" class="reaction-avatar">🧡</div>
+      <div><strong id="reactionTitle">えらい！</strong><p id="reactionText"></p></div>
+    </div>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>
