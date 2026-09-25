@@ -32,3 +32,21 @@ body.stealth .brand-mark{background:#fff;color:var(--orange);box-shadow:none;bor
 .reaction{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;width:min(calc(100% - 28px),520px);display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #ffd6b4;border-radius:20px;padding:12px 14px;box-shadow:0 18px 45px rgba(72,45,24,.2);z-index:50;animation:pop .2s ease-out}.reaction-avatar{width:46px;height:46px;border-radius:15px;background:#fff1e4;display:grid;place-items:center;font-size:1.5rem}.reaction p{margin:3px 0 0;color:#6f5c51;font-size:.83rem}.reaction strong{color:#d96516}
 @keyframes pop{from{opacity:0;transform:translate(-50%,12px) scale(.97)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 @media(min-width:760px){body{background:#f6eee7}.shell{margin:24px auto;min-height:calc(100svh - 48px);background:var(--bg);border-radius:30px;box-shadow:0 20px 70px rgba(61,39,21,.12)}.bottom-nav{bottom:24px;border-radius:0 0 30px 30px}}
+
+/* Oshi visual library */
+.settings-subhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.settings-subhead strong{display:block;font-size:.95rem}
+.settings-subhead span{display:block;color:var(--muted);font-size:.72rem;margin-top:2px}
+.oshi-library-settings{display:grid;gap:10px;padding:12px;border-radius:18px;background:#fff8f1;border:1px solid #f1dfd0}
+.oshi-library-settings>label{display:grid;gap:7px;font-weight:800;font-size:.82rem}
+.upload-zone{position:relative;border:1.5px dashed #f1b783;border-radius:16px;padding:15px;text-align:center;background:#fff;cursor:pointer}
+.upload-zone span{color:#a75a25}
+.upload-zone small{color:var(--muted);font-weight:600}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.library-count{font-size:.74rem;color:var(--muted)}
+.oshi-library-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.oshi-thumb{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:#f6ede6;border:1px solid #eee0d5}
+.oshi-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.oshi-thumb button{position:absolute;right:5px;top:5px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(28,20,16,.66);color:#fff;font-size:.75rem}
+.reaction-avatar{overflow:hidden}
+.reaction-avatar img{width:100%;height:100%;object-fit:cover}
