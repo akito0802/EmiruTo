@@ -1,6 +1,11 @@
 name: EmiruTo background push sender
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/push-sender.yml"
   schedule:
     - cron: "*/5 * * * *"
   workflow_dispatch:
