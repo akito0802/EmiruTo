@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20260926-15" />
+  <link rel="stylesheet" href="./styles.css?v=20260926-16" />
   <title>EmiruTo</title>
 </head>
 <body>
@@ -134,6 +134,39 @@
           <label class="switch-row"><span>推しの一言</span><input id="oshiToggle" type="checkbox" /></label>
           <label class="switch-row"><span>ステルスモード</span><input id="stealthToggle" type="checkbox" /></label>
           <label class="switch-row"><span>今日は静かに</span><input id="quietToggle" type="checkbox" /></label>
+          <div class="notification-settings">
+            <div class="settings-subhead">
+              <div><strong>通知</strong><span>朝・期限前・予定・未完了・夜の振り返り</span></div>
+              <span id="notificationPermissionBadge" class="permission-badge">未設定</span>
+            </div>
+            <div class="notification-actions">
+              <button id="notificationPermissionBtn" type="button" class="secondary-btn">通知を許可する</button>
+              <button id="notificationTestBtn" type="button" class="secondary-btn">テスト通知</button>
+            </div>
+            <label class="switch-row"><span>通知を使う</span><input id="notificationEnabled" type="checkbox" /></label>
+            <label>通知の文体
+              <select id="notificationStyle">
+                <option value="emiruto">EmiruTo風</option>
+                <option value="normal">シンプル</option>
+              </select>
+            </label>
+            <div class="notification-grid">
+              <label>朝の通知<input id="notificationMorningTime" type="time" value="08:00" /></label>
+              <label>未完了通知<input id="notificationUnfinishedTime" type="time" value="21:00" /></label>
+              <label>夜の振り返り<input id="notificationRecapTime" type="time" value="22:30" /></label>
+              <label>予定の何分前<input id="notificationEventMinutes" type="number" min="0" max="1440" step="5" value="15" /></label>
+              <label>期限通知①<input id="notificationDeadline1" type="number" min="0" max="10080" step="5" value="60" /></label>
+              <label>期限通知②<input id="notificationDeadline2" type="number" min="0" max="10080" step="5" value="15" /></label>
+            </div>
+            <div class="notification-checks">
+              <label><input id="notificationMorningEnabled" type="checkbox" /> 朝</label>
+              <label><input id="notificationDeadlineEnabled" type="checkbox" /> TODO期限</label>
+              <label><input id="notificationEventEnabled" type="checkbox" /> 予定</label>
+              <label><input id="notificationUnfinishedEnabled" type="checkbox" /> 未完了</label>
+              <label><input id="notificationRecapEnabled" type="checkbox" /> 振り返り</label>
+            </div>
+            <p class="notification-note">「今日は静かに」がONの日は通知しません。レア／超レアのメッセージは通知には出しません。GitHub Pages版では、完全にアプリを閉じている間の時刻指定通知はPushサーバーなしでは保証できないため、起動中または次回起動時に判定します。</p>
+          </div>
           <div class="oshi-library-settings">
             <div class="settings-subhead">
               <div><strong>笑瑠ビジュアル</strong><span>場面ごとに複数登録してランダム表示</span></div>
@@ -273,6 +306,6 @@
       <div><strong id="reactionTitle">えらい！</strong><p id="reactionText"></p></div>
     </div>
   </div>
-  <script src="./app.js?v=20260926-15"></script>
+  <script src="./app.js?v=20260926-16"></script>
 </body>
 </html>
