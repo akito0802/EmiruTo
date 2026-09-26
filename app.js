@@ -44,6 +44,34 @@
   let oshiCache = {};
   const OSHI_DB = "emiruto_media_v1";
   const OSHI_STORE = "oshiImages";
+  const BUILTIN_OSHI = {
+    normal:"./assets/oshi/normal.jpg",
+    morning:"./assets/oshi/normal.jpg",
+    day:"./assets/oshi/normal.jpg",
+    night:"./assets/oshi/night.jpg",
+    lateNight:"./assets/oshi/night.jpg",
+    happy:"./assets/oshi/happy.jpg",
+    bigHappy:"./assets/oshi/happy.jpg",
+    relief:"./assets/oshi/happy.jpg",
+    cheer:"./assets/oshi/normal.jpg",
+    sad:"./assets/oshi/sad.jpg",
+    pressure:"./assets/oshi/sad.jpg",
+    gentle:"./assets/oshi/sad.jpg",
+    rare:"./assets/oshi/rare.jpg",
+    superRare:"./assets/oshi/rare.jpg",
+    spring:"./assets/oshi/normal.jpg",
+    summer:"./assets/oshi/normal.jpg",
+    autumn:"./assets/oshi/normal.jpg",
+    winter:"./assets/oshi/night.jpg",
+    rain:"./assets/oshi/night.jpg",
+    tanabata:"./assets/oshi/normal.jpg",
+    halloween:"./assets/oshi/normal.jpg",
+    christmas:"./assets/oshi/happy.jpg",
+    newyear:"./assets/oshi/happy.jpg",
+    apr22:"./assets/oshi/happy.jpg",
+    hot:"./assets/oshi/normal.jpg",
+    cold:"./assets/oshi/night.jpg"
+  };
 
   function loadState(){
     try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
@@ -440,10 +468,11 @@
   }
   function pickOshiImage(category="normal"){
     const preferred=oshiCache[category]||[];
+    if(preferred.length) return preferred[Math.floor(Math.random()*preferred.length)].dataUrl;
+    if(BUILTIN_OSHI[category]) return BUILTIN_OSHI[category];
     const fallback=oshiCache.normal||[];
-    const pool=preferred.length?preferred:fallback;
-    if(pool.length) return pool[Math.floor(Math.random()*pool.length)].dataUrl;
-    return state.oshiImage||null;
+    if(fallback.length) return fallback[Math.floor(Math.random()*fallback.length)].dataUrl;
+    return state.oshiImage||BUILTIN_OSHI.normal||null;
   }
   function setOshiElement(imgEl,fallbackEl,src){
     if(!imgEl||!fallbackEl)return;
@@ -466,8 +495,11 @@
   function renderOshiLibrary(){
     const select=$("#oshiCategorySelect"); if(!select)return;
     const category=select.value||"normal", items=oshiCache[category]||[];
-    $("#oshiLibraryCount").textContent=`${select.options[select.selectedIndex]?.text||category}：${items.length}枚登録`;
-    $("#oshiLibraryGrid").innerHTML=items.length?items.map(item=>`<div class="oshi-thumb"><img src="${item.dataUrl}" alt=""><button type="button" data-remove-oshi="${item.id}" aria-label="削除">×</button></div>`).join(""):'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
+    const builtin=BUILTIN_OSHI[category]||null;
+    $("#oshiLibraryCount").textContent=`${select.options[select.selectedIndex]?.text||category}：追加${items.length}枚${builtin?" ＋ 標準画像":""}`;
+    const builtinCard=builtin?`<div class="oshi-thumb builtin-thumb"><img src="${builtin}" alt=""><span class="builtin-badge">標準</span></div>`:"";
+    const userCards=items.map(item=>`<div class="oshi-thumb"><img src="${item.dataUrl}" alt=""><button type="button" data-remove-oshi="${item.id}" aria-label="削除">×</button></div>`).join("");
+    $("#oshiLibraryGrid").innerHTML=(builtinCard+userCards)||'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
   }
   function renderSettings(){
     $("#userNameInput").value=state.userName||"";
