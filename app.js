@@ -310,6 +310,12 @@
       $("#eventFields").classList.toggle("hidden",addType!=="event");
       $("#sheetTitle").textContent=addType==="task"?"TODOを追加":"予定を追加";
     });
+    $("#taskDueDate").addEventListener("change",e=>{
+      const date=e.target.value;
+      const canBeToday=!date||date===today();
+      $("#taskToday").disabled=!canBeToday;
+      if(!canBeToday) $("#taskToday").checked=false;
+    });
     $("#addForm").addEventListener("submit",e=>{e.preventDefault();saveNewItem();});
     $("#saveItemBtn").addEventListener("click",e=>{e.preventDefault();saveNewItem();});
 
