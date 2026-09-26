@@ -1,9 +1,9 @@
-const CACHE="emiruto-v12";
+const CACHE="emiruto-v13";
 const ASSETS=[
   "./",
   "./index.html",
-  "./styles.css?v=20260926-12",
-  "./app.js?v=20260926-12",
+  "./styles.css?v=20260926-13",
+  "./app.js?v=20260926-13",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/oshi/normal.jpg?v=20260926-9",
@@ -21,29 +21,35 @@ const ASSETS=[
   "./assets/oshi/newyear.jpg?v=20260926-9",
   "./assets/oshi/apr22.jpg?v=20260926-9"
 ,
-  "./assets/oshi/adopted/v1.jpg?v=20260926-12"
+  "./assets/oshi/adopted/v1.jpg?v=20260926-13"
 ,
-  "./assets/oshi/adopted/v2.jpg?v=20260926-12"
+  "./assets/oshi/adopted/v2.jpg?v=20260926-13"
 ,
-  "./assets/oshi/adopted/v3.jpg?v=20260926-12"
+  "./assets/oshi/adopted/v3.jpg?v=20260926-13"
 ,
-  "./assets/oshi/adopted/v4.jpg?v=20260926-12"
+  "./assets/oshi/adopted/v4.jpg?v=20260926-13"
 ,
-  "./assets/oshi/adopted/v5.jpg?v=20260926-12"
+  "./assets/oshi/adopted/v5.jpg?v=20260926-13"
 ,
-  "./assets/oshi/adopted/v6.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v7.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v8.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v9.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v10.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v11.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v12.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v13.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v14.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v15.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v16.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v17.jpg?v=20260926-12",
-  "./assets/oshi/adopted/v18.jpg?v=20260926-12"
+  "./assets/oshi/adopted/v6.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v7.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v8.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v9.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v10.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v11.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v12.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v13.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v14.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v15.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v16.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v17.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v18.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v19.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v20.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v21.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v22.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v23.jpg?v=20260926-13",
+  "./assets/oshi/adopted/v24.jpg?v=20260926-13"
 ];
 self.addEventListener("install",e=>{
   self.skipWaiting();
