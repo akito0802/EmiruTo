@@ -12,6 +12,12 @@ const pool = new Pool({
 
 async function initDb() {
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS push_clients (
       client_id TEXT PRIMARY KEY,
       secret_hash TEXT NOT NULL,
