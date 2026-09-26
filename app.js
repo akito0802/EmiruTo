@@ -445,6 +445,8 @@
     const denominator=completedToday+todayTasks.length+overdue.length;
     const rate=denominator?Math.round(completedToday/denominator*100):100;
     $("#todayRate").textContent=rate+"%";
+    $("#todayProgressBar").style.width=rate+"%";
+    $("#homeTodoCount").textContent=todayTasks.length+overdue.length;
     $("#streakCount").textContent=calcStreak()+"日";
 
     const homeCategory=homeOshiCategory(hour,gentle,overdue.length,rate);
@@ -461,6 +463,7 @@
     $("#todayTaskList").innerHTML=filteredToday.map(t=>taskCard(t,false)).join("");
     $("#emptyTasks").classList.toggle("hidden",filteredToday.length+filteredOverdue.length>0);
     const ev=state.events.filter(e=>e.date===today()).sort((a,b)=>(a.start||"99:99").localeCompare(b.start||"99:99"));
+    $("#homeEventCount").textContent=ev.length;
     $("#todayEventList").innerHTML=ev.length?ev.map(eventCard).join(""):'<div class="empty-state">今日の予定はまだないよ</div>';
   }
 
