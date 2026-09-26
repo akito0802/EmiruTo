@@ -44,44 +44,34 @@
   let oshiCache = {};
   const OSHI_DB = "emiruto_media_v1";
   const OSHI_STORE = "oshiImages";
-  const BUILTIN_NORMAL = "data:image/jpeg;base64,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";
   const BUILTIN_OSHI = {
-    normal: BUILTIN_NORMAL,
-    morning: BUILTIN_NORMAL,
-    day: BUILTIN_NORMAL,
-    night: BUILTIN_NORMAL,
-    lateNight: BUILTIN_NORMAL,
-    happy: BUILTIN_NORMAL,
-    bigHappy: BUILTIN_NORMAL,
-    relief: BUILTIN_NORMAL,
-    cheer: BUILTIN_NORMAL,
-    sad: BUILTIN_NORMAL,
-    pressure: BUILTIN_NORMAL,
-    gentle: BUILTIN_NORMAL,
-    rare: BUILTIN_NORMAL,
-    superRare: BUILTIN_NORMAL,
-    spring: BUILTIN_NORMAL,
-    summer: BUILTIN_NORMAL,
-    autumn: BUILTIN_NORMAL,
-    winter: BUILTIN_NORMAL,
-    rain: BUILTIN_NORMAL,
-    tanabata: BUILTIN_NORMAL,
-    halloween: BUILTIN_NORMAL,
-    christmas: BUILTIN_NORMAL,
-    newyear: BUILTIN_NORMAL,
-    apr22: BUILTIN_NORMAL,
-    hot: BUILTIN_NORMAL,
-    cold: BUILTIN_NORMAL
+    normal: "./assets/oshi/normal.webp?v=20260926-8",
+    morning: "./assets/oshi/morning.webp?v=20260926-8",
+    day: "./assets/oshi/cheer.webp?v=20260926-8",
+    night: "./assets/oshi/rare.webp?v=20260926-8",
+    lateNight: "./assets/oshi/rare.webp?v=20260926-8",
+    happy: "./assets/oshi/happy.webp?v=20260926-8",
+    bigHappy: "./assets/oshi/happy.webp?v=20260926-8",
+    relief: "./assets/oshi/happy.webp?v=20260926-8",
+    cheer: "./assets/oshi/cheer.webp?v=20260926-8",
+    sad: "./assets/oshi/sad.webp?v=20260926-8",
+    pressure: "./assets/oshi/sad.webp?v=20260926-8",
+    gentle: "./assets/oshi/gentle.webp?v=20260926-8",
+    rare: "./assets/oshi/rare.webp?v=20260926-8",
+    superRare: "./assets/oshi/rare.webp?v=20260926-8",
+    spring: "./assets/oshi/spring.webp?v=20260926-8",
+    summer: "./assets/oshi/summer.webp?v=20260926-8",
+    autumn: "./assets/oshi/normal.webp?v=20260926-8",
+    winter: "./assets/oshi/christmas.webp?v=20260926-8",
+    rain: "./assets/oshi/rain.webp?v=20260926-8",
+    tanabata: "./assets/oshi/summer.webp?v=20260926-8",
+    halloween: "./assets/oshi/halloween.webp?v=20260926-8",
+    christmas: "./assets/oshi/christmas.webp?v=20260926-8",
+    newyear: "./assets/oshi/newyear.webp?v=20260926-8",
+    apr22: "./assets/oshi/apr22.webp?v=20260926-8",
+    hot: "./assets/oshi/summer.webp?v=20260926-8",
+    cold: "./assets/oshi/gentle.webp?v=20260926-8"
   };
-  Object.assign(BUILTIN_OSHI,{
-    normal:NORMAL,morning:MORNING,day:CHEER,night:RARE,lateNight:RARE,
-    happy:HAPPY,bigHappy:HAPPY,relief:HAPPY,cheer:CHEER,
-    sad:SAD,pressure:SAD,gentle:GENTLE,rare:RARE,superRare:RARE,
-    spring:SPRING,summer:SUMMER,autumn:NORMAL,winter:CHRISTMAS,rain:RAIN,
-    tanabata:SUMMER,halloween:HALLOWEEN,christmas:CHRISTMAS,newyear:NEWYEAR,
-    apr22:APR22,hot:SUMMER,cold:GENTLE
-  });
-
 
   function loadState(){
     try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
