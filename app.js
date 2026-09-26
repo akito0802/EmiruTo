@@ -263,11 +263,15 @@
       .catch(()=>{});
 
     if("serviceWorker" in navigator){
-      try{ await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}); }catch{}
+      try{
+        const registration=await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"});
+        try{await registration.update();}catch{}
+      }catch{}
     }
     startNotificationScheduler();
     refreshBackgroundPushStatus();
     queuePushScheduleSync();
+    repairBackgroundPushSubscription(false);
     initCloudSync();
   }
 
@@ -332,6 +336,7 @@
     $("#notificationPermissionBtn").addEventListener("click",requestNotificationPermission);
     $("#notificationTestBtn").addEventListener("click",()=>sendSystemNotification("test",{}));
     $("#backgroundPushBtn").addEventListener("click",toggleBackgroundPush);
+    $("#backgroundPushTestBtn")?.addEventListener("click",testBackgroundPush);
     $("#notificationEnabled").addEventListener("change",e=>{ensureNotificationState();state.notifications.enabled=e.target.checked;saveState();renderNotificationSettings();checkNotifications();});
     $("#notificationStyle").addEventListener("change",saveNotificationSettingsFromUI);
     ["notificationMorningTime","notificationUnfinishedTime","notificationRecapTime","notificationEventMinutes","notificationDeadline1","notificationDeadline2",
@@ -1155,13 +1160,15 @@
     if(!response.ok){
       let message="Push server error";
       try{message=(await response.json()).error||message;}catch{}
-      throw new Error(message);
+      const error=new Error(message);
+      error.status=response.status;
+      throw error;
     }
     return response.json();
   }
   function renderBackgroundPushStatus(){
     ensureBackgroundPushState();
-    const badge=$("#backgroundPushBadge"),btn=$("#backgroundPushBtn"),status=$("#backgroundPushStatus");
+    const badge=$("#backgroundPushBadge"),btn=$("#backgroundPushBtn"),testBtn=$("#backgroundPushTestBtn"),status=$("#backgroundPushStatus");
     if(!badge||!btn||!status)return;
     badge.classList.remove("connected","waiting","denied");
     const server=pushServerUrl();
@@ -1169,30 +1176,35 @@
     if(!supportsBackgroundPush()){
       badge.textContent="非対応";badge.classList.add("denied");
       btn.disabled=true;btn.textContent="この環境では利用できません";
+      if(testBtn)testBtn.disabled=true;
       status.textContent="このブラウザは標準Web Pushに対応していません。";
       return;
     }
     if(isIOSLike()&&!isStandaloneApp()){
       badge.textContent="ホーム画面待ち";badge.classList.add("waiting");
       btn.disabled=false;btn.textContent="使い方を確認";
+      if(testBtn)testBtn.disabled=true;
       status.textContent="iPhone / iPadではEmiruToをホーム画面に追加し、そのアイコンから開くとバックグラウンド通知を許可できます。";
       return;
     }
     if(!server){
       badge.textContent="サーバー待ち";badge.classList.add("waiting");
       btn.disabled=true;btn.textContent="配信サーバー接続待ち";
+      if(testBtn)testBtn.disabled=true;
       status.textContent="アプリ側のWeb Push対応は完了済み。配信サーバーをデプロイすると有効化できます。";
       return;
     }
     if(state.backgroundPush.enabled){
       badge.textContent="接続済み";badge.classList.add("connected");
       btn.disabled=false;btn.textContent="バックグラウンド通知を解除";
+      if(testBtn)testBtn.disabled=permissionState()!=="granted";
       status.textContent=state.backgroundPush.lastSyncAt
         ?"通知予定を同期済み："+new Date(state.backgroundPush.lastSyncAt).toLocaleString("ja-JP")
         :"Pushサーバーに接続済み。通知予定を同期しています。";
     }else{
       badge.textContent="利用可能";badge.classList.add("waiting");
       btn.disabled=false;btn.textContent="バックグラウンド通知を有効化";
+      if(testBtn)testBtn.disabled=permissionState()!=="granted";
       status.textContent="有効化すると、EmiruToを閉じていても通知を受け取れます。";
     }
   }
@@ -1208,6 +1220,100 @@
       if(status)status.textContent="Pushサーバーに接続できません。少し時間を置いて再試行してください。";
     }
   }
+  async function registerBackgroundPushSubscription(forceNew=false){
+    if(!supportsBackgroundPush()) throw new Error("Push is not supported");
+    if(isIOSLike()&&!isStandaloneApp()) throw new Error("Home screen app required");
+    if(permissionState()!=="granted") throw new Error("Notification permission required");
+
+    const keyData=await pushFetch("/api/vapid-public-key",{method:"GET",headers:{}});
+    const registration=await navigator.serviceWorker.ready;
+    let subscription=await registration.pushManager.getSubscription();
+
+    if(forceNew&&subscription){
+      try{await subscription.unsubscribe();}catch{}
+      subscription=null;
+    }
+    if(!subscription){
+      subscription=await registration.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:base64UrlToUint8Array(keyData.publicKey)
+      });
+    }
+
+    ensurePushCredentials();
+    await pushFetch("/api/subscribe",{
+      method:"POST",
+      body:JSON.stringify({
+        clientId:state.backgroundPush.clientId,
+        secret:state.backgroundPush.secret,
+        subscription:subscription.toJSON()
+      })
+    });
+    return subscription;
+  }
+
+  async function repairBackgroundPushSubscription(showFeedback=false){
+    ensureBackgroundPushState();
+    if(!state.backgroundPush.enabled||!pushServerUrl()||!supportsBackgroundPush())return false;
+    if(isIOSLike()&&!isStandaloneApp())return false;
+    if(permissionState()!=="granted")return false;
+
+    try{
+      await registerBackgroundPushSubscription(false);
+      await syncBackgroundPushSchedule();
+      if(showFeedback)showReaction("通知接続を修復したよ🧡","iPhoneのPush購読と通知予定をもう一度つなぎ直したよ。","happy");
+      return true;
+    }catch(error){
+      console.warn("Background push repair failed",error);
+      if(showFeedback)showReaction("通知接続を直せなかったよ","バックグラウンド通知を一度OFF→ONにしてみてね。","gentle");
+      return false;
+    }
+  }
+
+  async function testBackgroundPush(){
+    ensureBackgroundPushState();
+    if(isIOSLike()&&!isStandaloneApp()){
+      showReaction("ホーム画面から開いてね","iPhoneではホーム画面に追加したEmiruToからだけバックグラウンドPushを使えるよ。","gentle");
+      return;
+    }
+    if(permissionState()!=="granted"){
+      showReaction("通知を許可してね","先にiPhone側でEmiruToの通知を許可してね。","gentle");
+      return;
+    }
+    try{
+      if(!state.backgroundPush.enabled){
+        await registerBackgroundPushSubscription(false);
+        state.backgroundPush.enabled=true;
+        ensureNotificationState();state.notifications.enabled=true;
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      }else{
+        await registerBackgroundPushSubscription(false);
+      }
+      await syncBackgroundPushSchedule();
+      try{
+        await pushFetch("/api/test-push",{
+          method:"POST",
+          body:JSON.stringify({clientId:state.backgroundPush.clientId,secret:state.backgroundPush.secret})
+        });
+      }catch(error){
+        if(error.status===404||error.status===410){
+          await registerBackgroundPushSubscription(true);
+          await syncBackgroundPushSchedule();
+          await pushFetch("/api/test-push",{
+            method:"POST",
+            body:JSON.stringify({clientId:state.backgroundPush.clientId,secret:state.backgroundPush.secret})
+          });
+        }else throw error;
+      }
+      renderNotificationSettings();
+      showReaction("テストPushを送ったよ🧡","数秒以内にiPhoneの通知として出れば、バックグラウンド通知は正常だよ。","happy");
+    }catch(error){
+      console.error(error);
+      renderNotificationSettings();
+      showReaction("テストPushに失敗したよ","Push購読を作り直せなかったみたい。通知設定を確認してね。","gentle");
+    }
+  }
+
   async function toggleBackgroundPush(){
     ensureBackgroundPushState();
     if(isIOSLike()&&!isStandaloneApp()){
@@ -1225,24 +1331,7 @@
       if(permission!=="granted") permission=await Notification.requestPermission();
       if(permission!=="granted"){renderNotificationSettings();return;}
 
-      const keyData=await pushFetch("/api/vapid-public-key",{method:"GET",headers:{}});
-      const registration=await navigator.serviceWorker.ready;
-      let subscription=await registration.pushManager.getSubscription();
-      if(!subscription){
-        subscription=await registration.pushManager.subscribe({
-          userVisibleOnly:true,
-          applicationServerKey:base64UrlToUint8Array(keyData.publicKey)
-        });
-      }
-      ensurePushCredentials();
-      await pushFetch("/api/subscribe",{
-        method:"POST",
-        body:JSON.stringify({
-          clientId:state.backgroundPush.clientId,
-          secret:state.backgroundPush.secret,
-          subscription:subscription.toJSON()
-        })
-      });
+      await registerBackgroundPushSubscription(false);
       state.backgroundPush.enabled=true;
       ensureNotificationState();state.notifications.enabled=true;
       localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
@@ -1252,7 +1341,7 @@
     }catch(error){
       console.error(error);
       renderBackgroundPushStatus();
-      showReaction("通知の接続に失敗したよ","Pushサーバーか通知設定を確認して、もう一度試してね。","gentle");
+      showReaction("通知の接続に失敗したよ","Push購読を作り直せなかったみたい。もう一度試してね。","gentle");
     }
   }
   async function disableBackgroundPush(){
@@ -1357,8 +1446,28 @@
       renderBackgroundPushStatus();
     }catch(error){
       console.warn("Background push sync failed",error);
+      if(error.status===401){
+        try{
+          await registerBackgroundPushSubscription(false);
+          const notifications=buildBackgroundPushSchedule();
+          await pushFetch("/api/schedule",{
+            method:"POST",
+            body:JSON.stringify({
+              clientId:state.backgroundPush.clientId,
+              secret:state.backgroundPush.secret,
+              notifications
+            })
+          });
+          state.backgroundPush.lastSyncAt=new Date().toISOString();
+          localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+          renderBackgroundPushStatus();
+          return;
+        }catch(repairError){
+          console.warn("Background push resubscribe failed",repairError);
+        }
+      }
       const status=$("#backgroundPushStatus");
-      if(status)status.textContent="通知予定の同期に失敗しました。次回起動時に再試行します。";
+      if(status)status.textContent="通知予定の同期に失敗しました。アプリを開くと自動修復を試します。";
     }finally{
       pushSyncInProgress=false;
     }
