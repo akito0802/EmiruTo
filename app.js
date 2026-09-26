@@ -74,32 +74,32 @@
     cold:[A+"v1.jpg?v=20260926-10",A+"v5.jpg?v=20260926-10"]
   };
   const ADOPTED_OSHI = {
-    normal:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    morning:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    day:["./assets/oshi/adopted/v2.jpg?v=20260926-10","./assets/oshi/adopted/v6.jpg?v=20260926-10"],
-    night:["./assets/oshi/adopted/v5.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
-    lateNight:["./assets/oshi/adopted/v5.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
-    happy:["./assets/oshi/adopted/v2.jpg?v=20260926-10","./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v6.jpg?v=20260926-10"],
-    bigHappy:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    relief:["./assets/oshi/adopted/v6.jpg?v=20260926-10","./assets/oshi/adopted/v1.jpg?v=20260926-10"],
-    cheer:["./assets/oshi/adopted/v2.jpg?v=20260926-10","./assets/oshi/adopted/v3.jpg?v=20260926-10"],
-    sad:["./assets/oshi/adopted/v4.jpg?v=20260926-10"],
-    pressure:["./assets/oshi/adopted/v5.jpg?v=20260926-10"],
-    gentle:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
-    rare:["./assets/oshi/adopted/v4.jpg?v=20260926-10","./assets/oshi/adopted/v5.jpg?v=20260926-10"],
-    superRare:["./assets/oshi/adopted/v4.jpg?v=20260926-10"],
-    spring:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    summer:["./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    autumn:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v5.jpg?v=20260926-10"],
-    winter:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v6.jpg?v=20260926-10"],
-    rain:["./assets/oshi/adopted/v5.jpg?v=20260926-10"],
-    tanabata:["./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    halloween:["./assets/oshi/adopted/v5.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
-    christmas:["./assets/oshi/adopted/v6.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
-    newyear:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v1.jpg?v=20260926-10"],
-    apr22:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    hot:["./assets/oshi/adopted/v2.jpg?v=20260926-10"],
-    cold:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"]
+    normal:[A+"v1.jpg?v=20260926-11",A+"v2.jpg?v=20260926-11",A+"v5.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    morning:[A+"v1.jpg?v=20260926-11",A+"v2.jpg?v=20260926-11",A+"v7.jpg?v=20260926-11"],
+    day:[A+"v2.jpg?v=20260926-11",A+"v6.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    night:[A+"v4.jpg?v=20260926-11",A+"v5.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11"],
+    lateNight:[A+"v4.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11"],
+    happy:[A+"v2.jpg?v=20260926-11",A+"v3.jpg?v=20260926-11",A+"v6.jpg?v=20260926-11",A+"v10.jpg?v=20260926-11"],
+    bigHappy:[A+"v3.jpg?v=20260926-11",A+"v10.jpg?v=20260926-11"],
+    relief:[A+"v1.jpg?v=20260926-11",A+"v6.jpg?v=20260926-11",A+"v9.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11"],
+    cheer:[A+"v2.jpg?v=20260926-11",A+"v3.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    sad:[A+"v4.jpg?v=20260926-11",A+"v5.jpg?v=20260926-11",A+"v12.jpg?v=20260926-11"],
+    pressure:[A+"v5.jpg?v=20260926-11",A+"v12.jpg?v=20260926-11"],
+    gentle:[A+"v1.jpg?v=20260926-11",A+"v4.jpg?v=20260926-11",A+"v7.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11",A+"v12.jpg?v=20260926-11"],
+    rare:[A+"v4.jpg?v=20260926-11",A+"v5.jpg?v=20260926-11",A+"v9.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11"],
+    superRare:[A+"v4.jpg?v=20260926-11",A+"v9.jpg?v=20260926-11"],
+    spring:[A+"v1.jpg?v=20260926-11",A+"v2.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    summer:[A+"v2.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    autumn:[A+"v3.jpg?v=20260926-11",A+"v5.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    winter:[A+"v1.jpg?v=20260926-11",A+"v6.jpg?v=20260926-11",A+"v7.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11"],
+    rain:[A+"v5.jpg?v=20260926-11",A+"v12.jpg?v=20260926-11"],
+    tanabata:[A+"v2.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    halloween:[A+"v4.jpg?v=20260926-11",A+"v5.jpg?v=20260926-11",A+"v9.jpg?v=20260926-11"],
+    christmas:[A+"v4.jpg?v=20260926-11",A+"v6.jpg?v=20260926-11",A+"v10.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11"],
+    newyear:[A+"v1.jpg?v=20260926-11",A+"v3.jpg?v=20260926-11",A+"v10.jpg?v=20260926-11"],
+    apr22:[A+"v2.jpg?v=20260926-11",A+"v3.jpg?v=20260926-11",A+"v10.jpg?v=20260926-11"],
+    hot:[A+"v2.jpg?v=20260926-11",A+"v8.jpg?v=20260926-11"],
+    cold:[A+"v1.jpg?v=20260926-11",A+"v7.jpg?v=20260926-11",A+"v11.jpg?v=20260926-11"]
   };
 
   function loadState(){
@@ -504,7 +504,7 @@
     if(builtins.length) return builtins[Math.floor(Math.random()*builtins.length)];
     const fallback=oshiCache.normal||[];
     if(fallback.length) return fallback[Math.floor(Math.random()*fallback.length)].dataUrl;
-    return state.oshiImage||BUILTIN_OSHI.normal||null;
+    const fallbackBuiltins=Array.isArray(BUILTIN_OSHI.normal)?BUILTIN_OSHI.normal:[BUILTIN_OSHI.normal].filter(Boolean); return state.oshiImage||fallbackBuiltins[0]||null;
   }
   function setOshiElement(imgEl,fallbackEl,src){
     if(!imgEl||!fallbackEl)return;
@@ -531,11 +531,11 @@
     const category=select.value||"normal", items=oshiCache[category]||[];
     const builtinList=Array.isArray(BUILTIN_OSHI[category])?BUILTIN_OSHI[category]:(BUILTIN_OSHI[category]?[BUILTIN_OSHI[category]]:[]);
     const adopted=ADOPTED_OSHI[category]||[];
-    $("#oshiLibraryCount").textContent=`${select.options[select.selectedIndex]?.text||category}：採用${adopted.length}枚 ＋ 追加${items.length}枚${builtin?" ＋ 標準画像":""}`;
+    $("#oshiLibraryCount").textContent=`${select.options[select.selectedIndex]?.text||category}：採用${adopted.length}枚 ＋ 追加${items.length}枚`;
     const adoptedCards=adopted.map(src=>`<div class="oshi-thumb builtin-thumb"><img src="${src}" alt=""><span class="builtin-badge">採用</span></div>`).join("");
-    const builtinCard=builtin?`<div class="oshi-thumb builtin-thumb"><img src="${builtin}" alt=""><span class="builtin-badge">標準</span></div>`:"";
+    const builtinCards=builtinList.map((src,i)=>`<div class="oshi-thumb builtin-thumb"><img src="${src}" alt=""><span class="builtin-badge">標準${i+1}</span></div>`).join("");
     const userCards=items.map(item=>`<div class="oshi-thumb"><img src="${item.dataUrl}" alt=""><button type="button" data-remove-oshi="${item.id}" aria-label="削除">×</button></div>`).join("");
-    $("#oshiLibraryGrid").innerHTML=(adoptedCards+builtinCard+userCards)||'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
+    $("#oshiLibraryGrid").innerHTML=(adoptedCards+builtinCards+userCards)||'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
   }
   function renderSettings(){
     $("#userNameInput").value=state.userName||"";
