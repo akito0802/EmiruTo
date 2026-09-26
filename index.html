@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20260926-22" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-01" />
   <title>EmiruTo</title>
 </head>
 <body>
@@ -37,28 +37,36 @@
     <main id="mainApp" class="shell hidden">
       <header class="topbar">
         <div>
-          <p id="dateLabel" class="eyebrow"></p>
-          <h1 id="greeting">おはよう、あなた</h1>
+          <p class="eyebrow">EmiruTo</p>
+          <p id="dateLabel" class="topbar-date"></p>
         </div>
         <button id="stealthQuick" class="icon-btn" aria-label="ステルスモード">◉</button>
       </header>
 
       <section id="homeView" class="view active">
-        <div id="oshiPanel" class="oshi-panel">
-          <button id="oshiAvatar" class="oshi-avatar" aria-label="推しメッセージ。長押しで隠しモード">
+        <div id="oshiPanel" class="oshi-panel home-hero">
+          <button id="oshiAvatar" class="oshi-avatar hero-visual" aria-label="推しメッセージ。長押しで隠しモード">
             <img id="oshiImage" alt="" class="hidden" />
             <span id="oshiFallback">🧡</span>
+            <span class="hero-gradient" aria-hidden="true"></span>
           </button>
-          <div class="oshi-copy">
-            <span class="tiny-label">今日のひとこと</span>
-            <p id="oshiMessage">今日もひとつずついこ〜！</p>
+          <div class="hero-copy">
+            <h1 id="greeting">おはよう、あなた♡</h1>
+            <div class="oshi-copy">
+              <span class="tiny-label">今日のひとこと</span>
+              <p id="oshiMessage">今日もひとつずついこ〜！</p>
+            </div>
+            <div class="home-summary" aria-label="今日のまとめ">
+              <div><strong id="homeTodoCount">0</strong><span>残りTODO</span></div>
+              <div><strong id="homeEventCount">0</strong><span>予定</span></div>
+              <div><strong id="streakCount">0日</strong><span>連続</span></div>
+            </div>
+            <div class="home-progress">
+              <div><span>今日の達成率</span><strong id="todayRate">0%</strong></div>
+              <i><b id="todayProgressBar"></b></i>
+            </div>
           </div>
         </div>
-
-        <section class="stat-grid">
-          <article><strong id="todayRate">0%</strong><span>今日の達成率</span></article>
-          <article><strong id="streakCount">0日</strong><span>連続達成</span></article>
-        </section>
 
         <section class="section-block">
           <div class="section-head">
