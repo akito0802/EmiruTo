@@ -407,14 +407,35 @@
   }
 
   function renderAll(){ renderHome();renderCalendar();renderHistory();renderSettings(); }
+  function greetingName(){
+    const name=String(state.userName||"あなた").trim()||"あなた";
+    if(name==="あなた") return "あなた♡";
+    if(/(さん|くん|君|ちゃん|様|さま)$/.test(name)) return name+"♡";
+    return name+"さん♡";
+  }
+  function homeGreeting(hour,{gentle=false,todayRemaining=0,overdueCount=0,completedToday=0}={}){
+    const name=greetingName();
+    const hasTodayActivity=completedToday+todayRemaining+overdueCount>0;
+    if(gentle) return `今日はゆっくりでいいよ、${name}`;
+    if(hasTodayActivity && todayRemaining===0 && overdueCount===0 && completedToday>0) return `今日もおつかれさま、${name}`;
+    if((hour>=22||hour<5) && (todayRemaining>0||overdueCount>0)) return `無理しすぎないでね、${name}`;
+    if(hour>=5&&hour<11) return `おはよう、${name}`;
+    if(hour>=11&&hour<17) return `こんにちは、${name}`;
+    if(hour>=17&&hour<22) return `こんばんは、${name}`;
+    return `まだ起きてるの？${name}`;
+  }
   function renderHome(){
     const hour=new Date().getHours();
-    const hello=hour<11?"おはよう":hour<18?"こんにちは":"おかえり";
-    $("#greeting").textContent=`${hello}、${state.userName||"あなた"}`;
     const gentle=isGentle();
     const todayTasks=state.tasks.filter(t=>!t.someday && (t.today||t.dueDate===today()) && !t.completed);
     const overdue=state.tasks.filter(t=>!t.completed&&!t.someday&&t.dueDate&&t.dueDate<today());
     const completedToday=state.tasks.filter(t=>t.completed&&t.completedAt?.slice(0,10)===today()).length;
+    $("#greeting").textContent=homeGreeting(hour,{
+      gentle,
+      todayRemaining:todayTasks.length,
+      overdueCount:overdue.length,
+      completedToday
+    });
     const denominator=completedToday+todayTasks.length+overdue.length;
     const rate=denominator?Math.round(completedToday/denominator*100):100;
     $("#todayRate").textContent=rate+"%";
