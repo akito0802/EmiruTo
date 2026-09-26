@@ -53,3 +53,15 @@ body.stealth .brand-mark{background:#fff;color:var(--orange);box-shadow:none;bor
 
 .builtin-thumb{outline:1px solid #f2c79f}
 .builtin-badge{position:absolute;left:5px;bottom:5px;padding:3px 6px;border-radius:999px;background:rgba(255,255,255,.9);color:#a65b27;font-size:.62rem;font-weight:800;box-shadow:0 2px 7px rgba(65,42,25,.12)}
+
+/* Reaction memories + adopted visual catalog */
+.memory-note{font-size:.7rem;color:var(--muted);font-weight:700}
+.memory-card{background:linear-gradient(135deg,#fff8f1,#fff);border-color:#f2c79f}
+.adopted-catalog{margin-top:4px;border:1px solid #f0d8c4;border-radius:16px;background:#fff;padding:10px}
+.adopted-catalog summary{cursor:pointer;font-weight:850;color:#9b572a;font-size:.82rem}
+.adopted-catalog-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.catalog-thumb{position:relative;overflow:hidden;border-radius:14px;background:#f8efe8;border:1px solid #eee0d5}
+.catalog-thumb img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.catalog-thumb div{padding:6px 7px;background:#fff}
+.catalog-thumb strong{display:block;font-size:.72rem;color:#8e4d24}
+.catalog-thumb span{display:block;margin-top:2px;color:var(--muted);font-size:.58rem;line-height:1.35;min-height:1.6em}
