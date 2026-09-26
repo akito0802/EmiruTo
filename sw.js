@@ -1,9 +1,9 @@
-const CACHE="emiruto-v10";
+const CACHE="emiruto-v11";
 const ASSETS=[
   "./",
   "./index.html",
-  "./styles.css?v=20260926-10",
-  "./app.js?v=20260926-10",
+  "./styles.css?v=20260926-11",
+  "./app.js?v=20260926-11",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/oshi/normal.jpg?v=20260926-9",
@@ -21,17 +21,23 @@ const ASSETS=[
   "./assets/oshi/newyear.jpg?v=20260926-9",
   "./assets/oshi/apr22.jpg?v=20260926-9"
 ,
-  "./assets/oshi/adopted/v1.jpg?v=20260926-10"
+  "./assets/oshi/adopted/v1.jpg?v=20260926-11"
 ,
-  "./assets/oshi/adopted/v2.jpg?v=20260926-10"
+  "./assets/oshi/adopted/v2.jpg?v=20260926-11"
 ,
-  "./assets/oshi/adopted/v3.jpg?v=20260926-10"
+  "./assets/oshi/adopted/v3.jpg?v=20260926-11"
 ,
-  "./assets/oshi/adopted/v4.jpg?v=20260926-10"
+  "./assets/oshi/adopted/v4.jpg?v=20260926-11"
 ,
-  "./assets/oshi/adopted/v5.jpg?v=20260926-10"
+  "./assets/oshi/adopted/v5.jpg?v=20260926-11"
 ,
-  "./assets/oshi/adopted/v6.jpg?v=20260926-10"
+  "./assets/oshi/adopted/v6.jpg?v=20260926-11",
+  "./assets/oshi/adopted/v7.jpg?v=20260926-11",
+  "./assets/oshi/adopted/v8.jpg?v=20260926-11",
+  "./assets/oshi/adopted/v9.jpg?v=20260926-11",
+  "./assets/oshi/adopted/v10.jpg?v=20260926-11",
+  "./assets/oshi/adopted/v11.jpg?v=20260926-11",
+  "./assets/oshi/adopted/v12.jpg?v=20260926-11"
 ];
 self.addEventListener("install",e=>{
   self.skipWaiting();
