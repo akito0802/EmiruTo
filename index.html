@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20260927-01" />
+  <link rel="stylesheet" href="./styles.css?v=20260927-02" />
   <title>EmiruTo</title>
 </head>
 <body>
@@ -36,11 +36,14 @@
 
     <main id="mainApp" class="shell hidden">
       <header class="topbar">
-        <div>
-          <p class="eyebrow">EmiruTo</p>
-          <p id="dateLabel" class="topbar-date"></p>
+        <div class="brand-lockup">
+          <div class="brand-word">EmiruTo<span>♡</span></div>
+          <p class="brand-tagline">やりたい、きっとできる♡</p>
         </div>
-        <button id="stealthQuick" class="icon-btn" aria-label="ステルスモード">◉</button>
+        <div class="top-actions">
+          <p id="dateLabel" class="topbar-date"></p>
+          <button id="stealthQuick" class="top-action-btn" aria-label="ステルスモード">♡</button>
+        </div>
       </header>
 
       <section id="homeView" class="view active">
@@ -87,7 +90,15 @@
       </section>
 
       <section id="calendarView" class="view">
-        <div class="page-head"><div><span class="tiny-label">CALENDAR</span><h2>カレンダー</h2></div></div>
+        <div class="page-hero calendar-hero">
+          <div class="page-hero-copy">
+            <span class="tiny-label">CALENDAR</span>
+            <h2>今月も<br>ゆっくりいこう♡</h2>
+            <p>焦らず、わたしのペースで。<br>ひとつずつ進めば大丈夫。</p>
+          </div>
+          <img src="./assets/oshi/adopted/v14.jpg?v=20260927-02" alt="" />
+          <span class="page-hero-heart">♡</span>
+        </div>
         <div class="calendar-card">
           <div class="calendar-toolbar">
             <button id="prevMonth" class="icon-btn">‹</button>
@@ -107,7 +118,15 @@
       </section>
 
       <section id="historyView" class="view">
-        <div class="page-head"><div><span class="tiny-label">HISTORY</span><h2>履歴・分析</h2></div></div>
+        <div class="page-hero history-hero">
+          <div class="page-hero-copy">
+            <span class="tiny-label">REVIEW</span>
+            <h2>今週も<br>ちゃんと進めてる♡</h2>
+            <p>コツコツが、ちゃんと形になってるよ。<br>この調子でいこ〜！</p>
+          </div>
+          <img src="./assets/oshi/adopted/v10.jpg?v=20260927-02" alt="" />
+          <span class="page-hero-heart">♡</span>
+        </div>
         <div class="stat-grid">
           <article><strong id="monthRate">0%</strong><span>今月の達成率</span></article>
           <article><strong id="monthDone">0</strong><span>今月の完了</span></article>
@@ -129,7 +148,15 @@
       </section>
 
       <section id="settingsView" class="view">
-        <div class="page-head"><div><span class="tiny-label">SETTINGS</span><h2>設定</h2></div></div>
+        <div class="page-hero settings-hero">
+          <div class="page-hero-copy">
+            <span class="tiny-label">SETTINGS</span>
+            <h2>あなたの<br>使いやすさに合わせよう♡</h2>
+            <p>ずっと安心して続けられるように、<br>ぴったりの設定に整えよ。</p>
+          </div>
+          <img src="./assets/oshi/adopted/v7.jpg?v=20260927-02" alt="" />
+          <span class="page-hero-heart">♡</span>
+        </div>
         <div class="settings-card">
           <label>呼ばれたい名前<input id="userNameInput" type="text" maxlength="20" placeholder="あなた" /></label>
           <label>テーマ
@@ -267,9 +294,9 @@
       <nav class="bottom-nav">
         <button data-view="home" class="nav-btn active"><span>⌂</span><small>ホーム</small></button>
         <button data-view="calendar" class="nav-btn"><span>▦</span><small>カレンダー</small></button>
-        <button id="addBtn" class="add-btn" aria-label="追加">＋</button>
-        <button data-view="history" class="nav-btn"><span>◫</span><small>履歴</small></button>
+        <button data-view="history" class="nav-btn"><span>▥</span><small>振り返り</small></button>
         <button data-view="settings" class="nav-btn"><span>⚙</span><small>設定</small></button>
+        <button id="addBtn" class="add-btn" aria-label="TODO・予定を追加">＋</button>
       </nav>
     </main>
 
