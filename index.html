@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20260926-16" />
+  <link rel="stylesheet" href="./styles.css?v=20260926-17" />
   <title>EmiruTo</title>
 </head>
 <body>
@@ -165,7 +165,18 @@
               <label><input id="notificationUnfinishedEnabled" type="checkbox" /> 未完了</label>
               <label><input id="notificationRecapEnabled" type="checkbox" /> 振り返り</label>
             </div>
-            <p class="notification-note">「今日は静かに」がONの日は通知しません。レア／超レアのメッセージは通知には出しません。GitHub Pages版では、完全にアプリを閉じている間の時刻指定通知はPushサーバーなしでは保証できないため、起動中または次回起動時に判定します。</p>
+            <div class="background-push-card">
+              <div class="background-push-head">
+                <div>
+                  <strong>完全バックグラウンド通知</strong>
+                  <span>アプリを閉じていても標準Web Pushで通知</span>
+                </div>
+                <span id="backgroundPushBadge" class="permission-badge">未接続</span>
+              </div>
+              <button id="backgroundPushBtn" type="button" class="primary-mini background-push-btn">バックグラウンド通知を有効化</button>
+              <p id="backgroundPushStatus" class="notification-note">Pushサーバーとの接続状態を確認中…</p>
+            </div>
+            <p class="notification-note">「今日は静かに」がONの日は通知しません。レア／超レアのメッセージは通知には出しません。iPhone / iPadではホーム画面に追加したWebアプリから通知を許可してください。</p>
           </div>
           <div class="oshi-library-settings">
             <div class="settings-subhead">
@@ -306,6 +317,7 @@
       <div><strong id="reactionTitle">えらい！</strong><p id="reactionText"></p></div>
     </div>
   </div>
-  <script src="./app.js?v=20260926-16"></script>
+  <script src="./push-config.js?v=20260926-17"></script>
+  <script src="./app.js?v=20260926-17"></script>
 </body>
 </html>
