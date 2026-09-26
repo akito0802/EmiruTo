@@ -205,15 +205,22 @@
 
   async function init(){
     $("#dateLabel").textContent = new Intl.DateTimeFormat("ja-JP",{month:"long",day:"numeric",weekday:"short"}).format(new Date());
-    await loadOshiLibrary();
     ensureNotificationState();
     ensureBackgroundPushState();
+
+    // Bind controls before any storage/network work so the UI never becomes untappable.
     bind();
     applyTheme();
     renderAll();
     showLock();
+
+    // Media storage is optional; load it after the UI is already interactive.
+    loadOshiLibrary()
+      .then(()=>{renderOshiLibrary();renderHome();})
+      .catch(()=>{});
+
     if("serviceWorker" in navigator){
-      try{ await navigator.serviceWorker.register("./sw.js"); }catch{}
+      try{ await navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"}); }catch{}
     }
     startNotificationScheduler();
     refreshBackgroundPushStatus();
@@ -603,9 +610,24 @@
 
   function openOshiDb(){
     return new Promise((resolve,reject)=>{
-      const req=indexedDB.open(OSHI_DB,1);
+      if(!("indexedDB" in window)) return reject(new Error("IndexedDB unavailable"));
+      let settled=false;
+      const finish=(fn,value)=>{
+        if(settled)return;
+        settled=true;
+        clearTimeout(timer);
+        fn(value);
+      };
+      const timer=setTimeout(()=>finish(reject,new Error("IndexedDB timeout")),2500);
+      let req;
+      try{req=indexedDB.open(OSHI_DB,1);}catch(error){finish(reject,error);return;}
       req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains(OSHI_STORE)){ const st=db.createObjectStore(OSHI_STORE,{keyPath:"id"}); st.createIndex("category","category",{unique:false}); } };
-      req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);
+      req.onsuccess=()=>{
+        if(settled){try{req.result.close();}catch{} return;}
+        finish(resolve,req.result);
+      };
+      req.onerror=()=>finish(reject,req.error||new Error("IndexedDB error"));
+      req.onblocked=()=>finish(reject,new Error("IndexedDB blocked"));
     });
   }
   async function loadOshiLibrary(){
