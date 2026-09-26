@@ -1,0 +1,28 @@
+name: EmiruTo background push sender
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-due:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Wake push API and send due notifications
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent \
+            --retry 5 \
+            --retry-all-errors \
+            --retry-delay 15 \
+            --connect-timeout 30 \
+            --max-time 120 \
+            -X POST \
+            https://emiruto-push-api.onrender.com/api/send-due
+          echo
