@@ -332,12 +332,12 @@
     $("#themeSelect").addEventListener("change",e=>{state.theme=e.target.value;saveState();applyTheme();});
     $("#oshiToggle").addEventListener("change",e=>{state.showOshi=e.target.checked;saveState();renderHome();});
     $("#stealthToggle").addEventListener("change",e=>{state.stealth=e.target.checked;saveState();applyTheme();renderSettings();});
-    $("#quietToggle").addEventListener("change",e=>{state.quiet=e.target.checked;saveState();renderNotificationSettings();});
+    $("#quietToggle").addEventListener("change",e=>{state.quiet=e.target.checked;saveState();renderNotificationSettings();setTimeout(refreshBackgroundPushStatus,1400);});
     $("#notificationPermissionBtn").addEventListener("click",requestNotificationPermission);
     $("#notificationTestBtn").addEventListener("click",()=>sendSystemNotification("test",{}));
     $("#backgroundPushBtn").addEventListener("click",toggleBackgroundPush);
     $("#backgroundPushTestBtn")?.addEventListener("click",testBackgroundPush);
-    $("#notificationEnabled").addEventListener("change",e=>{ensureNotificationState();state.notifications.enabled=e.target.checked;saveState();renderNotificationSettings();checkNotifications();});
+    $("#notificationEnabled").addEventListener("change",e=>{ensureNotificationState();state.notifications.enabled=e.target.checked;saveState();renderNotificationSettings();checkNotifications();setTimeout(refreshBackgroundPushStatus,1400);});
     $("#notificationStyle").addEventListener("change",saveNotificationSettingsFromUI);
     ["notificationMorningTime","notificationUnfinishedTime","notificationRecapTime","notificationEventMinutes","notificationDeadline1","notificationDeadline2",
       "notificationMorningEnabled","notificationDeadlineEnabled","notificationEventEnabled","notificationUnfinishedEnabled","notificationRecapEnabled"
@@ -1198,9 +1198,18 @@
       badge.textContent="接続済み";badge.classList.add("connected");
       btn.disabled=false;btn.textContent="バックグラウンド通知を解除";
       if(testBtn)testBtn.disabled=permissionState()!=="granted";
-      status.textContent=state.backgroundPush.lastSyncAt
-        ?"通知予定を同期済み："+new Date(state.backgroundPush.lastSyncAt).toLocaleString("ja-JP")
-        :"Pushサーバーに接続済み。通知予定を同期しています。";
+      ensureNotificationState();
+      if(!state.notifications.enabled){
+        badge.textContent="通知OFF";badge.classList.remove("connected");badge.classList.add("waiting");
+        status.textContent="「通知を使う」がOFFだから、実際の通知予定は登録されてないよ。";
+      }else if(state.quiet){
+        badge.textContent="静かに中";badge.classList.remove("connected");badge.classList.add("waiting");
+        status.textContent="「今日は静かに」がONだから、今日は通知予定を登録してないよ。";
+      }else{
+        status.textContent=state.backgroundPush.lastSyncAt
+          ?"通知予定を同期済み："+new Date(state.backgroundPush.lastSyncAt).toLocaleString("ja-JP")
+          :"Pushサーバーに接続済み。通知予定を同期しています。";
+      }
     }else{
       badge.textContent="利用可能";badge.classList.add("waiting");
       btn.disabled=false;btn.textContent="バックグラウンド通知を有効化";
@@ -1214,6 +1223,21 @@
     try{
       const r=await fetch(server+"/api/health",{cache:"no-store"});
       if(!r.ok)throw new Error("offline");
+
+      ensureBackgroundPushState();
+      if(state.backgroundPush.enabled&&state.backgroundPush.clientId&&state.backgroundPush.secret){
+        try{
+          const info=await pushFetch("/api/push-status",{
+            method:"POST",
+            body:JSON.stringify({clientId:state.backgroundPush.clientId,secret:state.backgroundPush.secret})
+          });
+          const status=$("#backgroundPushStatus");
+          if(status&&state.notifications?.enabled&&!state.quiet){
+            const next=info.nextFireAt?new Date(info.nextFireAt).toLocaleString("ja-JP"):"なし";
+            status.textContent=`サーバー登録：${Number(info.pending||0)}件 ／ 次の通知：${next}`;
+          }
+        }catch{}
+      }
     }catch{
       const badge=$("#backgroundPushBadge"),status=$("#backgroundPushStatus");
       if(badge&&!state.backgroundPush?.enabled){badge.textContent="サーバー停止中";badge.classList.add("denied");}
@@ -1289,7 +1313,6 @@
       }else{
         await registerBackgroundPushSubscription(false);
       }
-      await syncBackgroundPushSchedule();
       try{
         await pushFetch("/api/test-push",{
           method:"POST",
@@ -1298,7 +1321,6 @@
       }catch(error){
         if(error.status===404||error.status===410){
           await registerBackgroundPushSubscription(true);
-          await syncBackgroundPushSchedule();
           await pushFetch("/api/test-push",{
             method:"POST",
             body:JSON.stringify({clientId:state.backgroundPush.clientId,secret:state.backgroundPush.secret})
@@ -1436,7 +1458,7 @@
     try{
       ensurePushCredentials();
       const notifications=buildBackgroundPushSchedule();
-      await pushFetch("/api/schedule",{
+      const result=await pushFetch("/api/schedule",{
         method:"POST",
         body:JSON.stringify({
           clientId:state.backgroundPush.clientId,
@@ -1447,13 +1469,18 @@
       state.backgroundPush.lastSyncAt=new Date().toISOString();
       localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
       renderBackgroundPushStatus();
+      const status=$("#backgroundPushStatus");
+      if(status&&state.notifications?.enabled&&!state.quiet){
+        status.textContent=`サーバーへ通知予定を${Number(result.scheduled||0)}件登録したよ。`;
+      }
+      setTimeout(refreshBackgroundPushStatus,250);
     }catch(error){
       console.warn("Background push sync failed",error);
       if(error.status===401){
         try{
           await registerBackgroundPushSubscription(false);
           const notifications=buildBackgroundPushSchedule();
-          await pushFetch("/api/schedule",{
+          const result=await pushFetch("/api/schedule",{
             method:"POST",
             body:JSON.stringify({
               clientId:state.backgroundPush.clientId,
@@ -1464,6 +1491,11 @@
           state.backgroundPush.lastSyncAt=new Date().toISOString();
           localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
           renderBackgroundPushStatus();
+          const status=$("#backgroundPushStatus");
+          if(status&&state.notifications?.enabled&&!state.quiet){
+            status.textContent=`サーバーへ通知予定を${Number(result.scheduled||0)}件登録したよ。`;
+          }
+          setTimeout(refreshBackgroundPushStatus,250);
           return;
         }catch(repairError){
           console.warn("Background push resubscribe failed",repairError);
