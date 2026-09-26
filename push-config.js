@@ -1,3 +1,3 @@
 // EmiruTo background Web Push backend.
-// After the push backend is deployed, set this to its HTTPS origin (no trailing slash).
-window.EMIRUTO_PUSH_SERVER = "";
+// Supabase Edge Function companion endpoint.
+window.EMIRUTO_PUSH_SERVER = "https://nxjbhgohenblohmtvysk.supabase.co/functions/v1/emiruto-push";
