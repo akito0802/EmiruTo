@@ -1,9 +1,9 @@
-const CACHE="emiruto-v9";
+const CACHE="emiruto-v10";
 const ASSETS=[
   "./",
   "./index.html",
-  "./styles.css?v=20260926-9",
-  "./app.js?v=20260926-9",
+  "./styles.css?v=20260926-10",
+  "./app.js?v=20260926-10",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/oshi/normal.jpg?v=20260926-9",
@@ -20,6 +20,18 @@ const ASSETS=[
   "./assets/oshi/christmas.jpg?v=20260926-9",
   "./assets/oshi/newyear.jpg?v=20260926-9",
   "./assets/oshi/apr22.jpg?v=20260926-9"
+,
+  "./assets/oshi/adopted/v1.jpg?v=20260926-10"
+,
+  "./assets/oshi/adopted/v2.jpg?v=20260926-10"
+,
+  "./assets/oshi/adopted/v3.jpg?v=20260926-10"
+,
+  "./assets/oshi/adopted/v4.jpg?v=20260926-10"
+,
+  "./assets/oshi/adopted/v5.jpg?v=20260926-10"
+,
+  "./assets/oshi/adopted/v6.jpg?v=20260926-10"
 ];
 self.addEventListener("install",e=>{
   self.skipWaiting();
