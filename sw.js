@@ -1,9 +1,9 @@
-const CACHE="emiruto-v14";
+const CACHE="emiruto-v15";
 const ASSETS=[
   "./",
   "./index.html",
-  "./styles.css?v=20260926-14",
-  "./app.js?v=20260926-14",
+  "./styles.css?v=20260926-15",
+  "./app.js?v=20260926-15",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/oshi/normal.jpg?v=20260926-9",
