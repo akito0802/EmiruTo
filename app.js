@@ -1369,7 +1369,10 @@
   function addPushScheduleItem(items,id,fireAt,kind,data){
     if(!(fireAt instanceof Date)||Number.isNaN(fireAt.getTime()))return;
     const now=Date.now(),max=now+30*86400000;
-    if(fireAt.getTime()<now+15000||fireAt.getTime()>max)return;
+    // Keep notification times from up to 20 minutes ago.
+    // This lets a newly-created TODO inside the 15-minute reminder window
+    // be delivered immediately in the background instead of being dropped.
+    if(fireAt.getTime()<now-20*60000||fireAt.getTime()>max)return;
     const copy=notificationCopy(kind,data);
     items.push({
       id,fireAt:fireAt.toISOString(),title:copy.title,body:copy.body,
