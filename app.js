@@ -72,6 +72,34 @@
     hot: "./assets/oshi/summer.jpg?v=20260926-9",
     cold: "./assets/oshi/gentle.jpg?v=20260926-9"
   };
+  const ADOPTED_OSHI = {
+    normal:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    morning:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    day:["./assets/oshi/adopted/v2.jpg?v=20260926-10","./assets/oshi/adopted/v6.jpg?v=20260926-10"],
+    night:["./assets/oshi/adopted/v5.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
+    lateNight:["./assets/oshi/adopted/v5.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
+    happy:["./assets/oshi/adopted/v2.jpg?v=20260926-10","./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v6.jpg?v=20260926-10"],
+    bigHappy:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    relief:["./assets/oshi/adopted/v6.jpg?v=20260926-10","./assets/oshi/adopted/v1.jpg?v=20260926-10"],
+    cheer:["./assets/oshi/adopted/v2.jpg?v=20260926-10","./assets/oshi/adopted/v3.jpg?v=20260926-10"],
+    sad:["./assets/oshi/adopted/v4.jpg?v=20260926-10"],
+    pressure:["./assets/oshi/adopted/v5.jpg?v=20260926-10"],
+    gentle:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
+    rare:["./assets/oshi/adopted/v4.jpg?v=20260926-10","./assets/oshi/adopted/v5.jpg?v=20260926-10"],
+    superRare:["./assets/oshi/adopted/v4.jpg?v=20260926-10"],
+    spring:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    summer:["./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    autumn:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v5.jpg?v=20260926-10"],
+    winter:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v6.jpg?v=20260926-10"],
+    rain:["./assets/oshi/adopted/v5.jpg?v=20260926-10"],
+    tanabata:["./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    halloween:["./assets/oshi/adopted/v5.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
+    christmas:["./assets/oshi/adopted/v6.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"],
+    newyear:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v1.jpg?v=20260926-10"],
+    apr22:["./assets/oshi/adopted/v3.jpg?v=20260926-10","./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    hot:["./assets/oshi/adopted/v2.jpg?v=20260926-10"],
+    cold:["./assets/oshi/adopted/v1.jpg?v=20260926-10","./assets/oshi/adopted/v4.jpg?v=20260926-10"]
+  };
 
   function loadState(){
     try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
@@ -469,6 +497,8 @@
   function pickOshiImage(category="normal"){
     const preferred=oshiCache[category]||[];
     if(preferred.length) return preferred[Math.floor(Math.random()*preferred.length)].dataUrl;
+    const adopted=ADOPTED_OSHI[category]||ADOPTED_OSHI.normal||[];
+    if(adopted.length) return adopted[Math.floor(Math.random()*adopted.length)];
     if(BUILTIN_OSHI[category]) return BUILTIN_OSHI[category];
     const fallback=oshiCache.normal||[];
     if(fallback.length) return fallback[Math.floor(Math.random()*fallback.length)].dataUrl;
@@ -498,10 +528,12 @@
     const select=$("#oshiCategorySelect"); if(!select)return;
     const category=select.value||"normal", items=oshiCache[category]||[];
     const builtin=BUILTIN_OSHI[category]||null;
-    $("#oshiLibraryCount").textContent=`${select.options[select.selectedIndex]?.text||category}：追加${items.length}枚${builtin?" ＋ 標準画像":""}`;
+    const adopted=ADOPTED_OSHI[category]||[];
+    $("#oshiLibraryCount").textContent=`${select.options[select.selectedIndex]?.text||category}：採用${adopted.length}枚 ＋ 追加${items.length}枚${builtin?" ＋ 標準画像":""}`;
+    const adoptedCards=adopted.map(src=>`<div class="oshi-thumb builtin-thumb"><img src="${src}" alt=""><span class="builtin-badge">採用</span></div>`).join("");
     const builtinCard=builtin?`<div class="oshi-thumb builtin-thumb"><img src="${builtin}" alt=""><span class="builtin-badge">標準</span></div>`:"";
     const userCards=items.map(item=>`<div class="oshi-thumb"><img src="${item.dataUrl}" alt=""><button type="button" data-remove-oshi="${item.id}" aria-label="削除">×</button></div>`).join("");
-    $("#oshiLibraryGrid").innerHTML=(builtinCard+userCards)||'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
+    $("#oshiLibraryGrid").innerHTML=(adoptedCards+builtinCard+userCards)||'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
   }
   function renderSettings(){
     $("#userNameInput").value=state.userName||"";
