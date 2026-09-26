@@ -225,7 +225,7 @@
       "今日もひとつずついこ〜！";
     $("#oshiMessage").textContent=msg;
     $("#oshiPanel").classList.toggle("hidden",!state.showOshi||state.stealth);
-    const homeVisual = pickOshiImage(homeOshiCategory(hour,gentle));
+    const homeVisual = pickOshiImage(homeOshiCategory(hour,gentle,overdue.length,rate));
     setOshiElement($("#oshiImage"), $("#oshiFallback"), homeVisual);
 
     $("#minimalToggle").classList.toggle("active",state.minimalOnly);
@@ -479,9 +479,11 @@
     imgEl.classList.toggle("hidden",!src); fallbackEl.classList.toggle("hidden",!!src);
     if(src) imgEl.src=src;
   }
-  function homeOshiCategory(hour,gentle){
+  function homeOshiCategory(hour,gentle,overdueCount=0,rate=0){
     const md=today().slice(5);
     if(gentle)return "gentle";
+    if(overdueCount>0)return "sad";
+    if(rate===100)return "happy";
     if(md==="04-22")return "apr22";
     if(md==="07-07")return "tanabata";
     if(md==="10-31")return "halloween";
