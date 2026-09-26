@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: emiruto-push-api
+    runtime: node
+    plan: free
+    rootDir: push-server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: emiruto-push-db
+          property: connectionString
+      - key: ALLOWED_ORIGIN
+        value: https://akito0802.github.io
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+
+  - type: cron
+    name: emiruto-push-sender
+    runtime: node
+    plan: 0.5c-512mb
+    rootDir: push-server
+    schedule: "* * * * *"
+    buildCommand: npm install
+    startCommand: npm run send-due
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: emiruto-push-db
+          property: connectionString
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+
+databases:
+  - name: emiruto-push-db
+    plan: free
