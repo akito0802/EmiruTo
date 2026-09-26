@@ -45,6 +45,7 @@
 
   let state = loadState();
   let currentTaskId = null;
+  let currentEventId = null;
   let addType = "task";
   let pinBuffer = "";
   let pinStage = state.pinHash ? "unlock" : "setup";
@@ -310,10 +311,17 @@
 
     $("#todayTaskList").addEventListener("click",taskListClick);
     $("#overdueList").addEventListener("click",taskListClick);
+    $("#todayEventList").addEventListener("click",taskListClick);
+    $("#calendarDayContent").addEventListener("click",taskListClick);
     $("#actionClose").addEventListener("click",()=>$("#actionDialog").close());
     $("#actionDialog").addEventListener("click",e=>{
       const b=e.target.closest("[data-action]"); if(!b||!currentTaskId) return;
       handleTaskAction(currentTaskId,b.dataset.action);
+    });
+    $("#eventActionClose").addEventListener("click",()=>$("#eventActionDialog").close());
+    $("#eventActionDialog").addEventListener("click",e=>{
+      const b=e.target.closest("[data-event-action]"); if(!b||!currentEventId) return;
+      handleEventAction(currentEventId,b.dataset.eventAction);
     });
 
     $("#userNameInput").addEventListener("change",e=>{state.userName=e.target.value.trim()||"あなた";saveState();renderAll();});
@@ -443,17 +451,23 @@
     </article>`;
   }
   function eventCard(e){
-    return `<article class="event-card">
+    return `<article class="event-card" data-event-id="${e.id}">
       <div class="event-time">${esc(e.start||"終日")}</div>
       <div class="event-bar" style="background:${e.color||"#ff8a2b"}"></div>
-      <div><div class="event-title">${esc(e.title)}</div><div class="event-sub">${esc([e.location,e.end&&("〜"+e.end)].filter(Boolean).join(" "))}</div></div>
+      <div class="event-main"><div class="event-title">${esc(e.title)}</div><div class="event-sub">${esc([e.location,e.end&&("〜"+e.end)].filter(Boolean).join(" "))}</div></div>
+      <button class="event-more" type="button" data-event-more="${e.id}" aria-label="予定の操作">⋯</button>
     </article>`;
   }
   function taskListClick(e){
     const check=e.target.closest("[data-check]");
     if(check){ toggleTask(check.dataset.check); return; }
     const more=e.target.closest("[data-more]");
-    if(more){ currentTaskId=more.dataset.more; $("#actionDialog").showModal(); }
+    if(more){ currentTaskId=more.dataset.more; $("#actionDialog").showModal(); return; }
+    const eventMore=e.target.closest("[data-event-more]");
+    if(eventMore){
+      currentEventId=eventMore.dataset.eventMore;
+      $("#eventActionDialog").showModal();
+    }
   }
   function toggleTask(id){
     const t=state.tasks.find(x=>x.id===id); if(!t) return;
@@ -490,6 +504,20 @@
     }
     saveState(); $("#actionDialog").close(); renderAll();
     if(reaction&&!state.quiet) showReaction(reaction.title,reaction.text,reaction.category);
+  }
+
+  function handleEventAction(id,action){
+    const event=state.events.find(x=>x.id===id);
+    if(!event)return;
+    if(action==="delete"){
+      if(!confirm(`「${event.title}」を削除する？`))return;
+      state.events=state.events.filter(x=>x.id!==id);
+      saveState();
+      $("#eventActionDialog").close();
+      currentEventId=null;
+      renderAll();
+      showReaction("予定を削除したよ","クラウド同期にも反映するね。","normal");
+    }
   }
 
   function openAdd(){
@@ -625,7 +653,6 @@
       html+=`<section class="section-block"><div class="section-head"><h2>TODO</h2></div><div class="task-list">${tasks.length?tasks.map(t=>taskCard(t,false)).join(""):'<div class="empty-state">TODOなし</div>'}</div></section>`;
     }
     $("#calendarDayContent").innerHTML=html;
-    $("#calendarDayContent").addEventListener("click",taskListClick,{once:true});
   }
 
   function renderHistory(){
