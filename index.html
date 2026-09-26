@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20260926-14" />
+  <link rel="stylesheet" href="./styles.css?v=20260926-15" />
   <title>EmiruTo</title>
 </head>
 <body>
@@ -114,6 +114,10 @@
           <div class="section-head"><h2>日ごとの履歴</h2></div>
           <div id="historyList" class="history-list"></div>
         </section>
+        <section class="section-block">
+          <div class="section-head"><div><span class="tiny-label">MEMORIES</span><h2>思い出</h2></div><span class="memory-note">超レアだけ保存</span></div>
+          <div id="rareMemoryList" class="history-list"></div>
+        </section>
       </section>
 
       <section id="settingsView" class="view">
@@ -171,6 +175,10 @@
             </label>
             <div id="oshiLibraryCount" class="library-count"></div>
             <div id="oshiLibraryGrid" class="oshi-library-grid"></div>
+            <details class="adopted-catalog">
+              <summary>採用30枚を一覧で見る</summary>
+              <div id="adoptedCatalog" class="adopted-catalog-grid"></div>
+            </details>
             <button id="oshiClearCategory" type="button" class="danger-btn">このカテゴリの画像を全部削除</button>
           </div>
           <div class="settings-actions">
@@ -265,6 +273,6 @@
       <div><strong id="reactionTitle">えらい！</strong><p id="reactionText"></p></div>
     </div>
   </div>
-  <script src="./app.js?v=20260926-14"></script>
+  <script src="./app.js?v=20260926-15"></script>
 </body>
 </html>
