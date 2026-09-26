@@ -107,3 +107,30 @@ body.stealth .brand-mark{background:#fff;color:var(--orange);box-shadow:none;bor
 .event-more{width:38px;height:38px;border:0;border-radius:12px;background:#fff7f0;color:#8a6d5b;font-size:1.3rem;font-weight:900;display:grid;place-items:center}
 .event-action-grid{grid-template-columns:1fr}
 .event-action-grid .danger-outline{min-height:52px}
+
+
+/* Home hero: visual + greeting + daily summary */
+.topbar-date{margin:3px 0 0;color:var(--muted);font-size:.78rem;font-weight:700}
+.home-hero{display:block;padding:0;overflow:hidden;background:var(--surface);border-color:#f0d7c2}
+.home-hero .hero-visual{position:relative;width:100%;height:auto;aspect-ratio:4/3;border-radius:0;background:linear-gradient(145deg,var(--orange3),#fff);display:grid;place-items:center;overflow:hidden;font-size:3rem}
+.home-hero .hero-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 28%}
+.home-hero .hero-gradient{position:absolute;inset:auto 0 0;height:42%;background:linear-gradient(to bottom,rgba(255,255,255,0),rgba(255,255,255,.18));pointer-events:none}
+.hero-copy{padding:15px 16px 16px}
+.hero-copy h1{margin:0;font-size:1.48rem;line-height:1.28;letter-spacing:-.035em}
+.hero-copy .oshi-copy{margin-top:10px}
+.hero-copy .oshi-copy p{margin:4px 0 0}
+.home-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.home-summary>div{padding:10px 8px;border-radius:16px;background:#fff8f1;border:1px solid #f1e1d5;text-align:center}
+.home-summary strong{display:block;color:var(--orange);font-size:1.15rem;line-height:1.1}
+.home-summary span{display:block;margin-top:4px;color:var(--muted);font-size:.68rem;font-weight:750}
+.home-progress{margin-top:12px}
+.home-progress>div{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:.72rem;font-weight:750}
+.home-progress strong{color:var(--orange);font-size:.8rem}
+.home-progress>i{display:block;height:5px;margin-top:6px;border-radius:999px;background:#f1e8e1;overflow:hidden}
+.home-progress>i>b{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--orange),var(--orange2));border-radius:999px;transition:width .25s ease}
+body.stealth .home-hero{display:none!important}
+@media(max-width:390px){
+  .home-hero .hero-visual{aspect-ratio:1.12/1}
+  .hero-copy{padding:13px 14px 14px}
+  .hero-copy h1{font-size:1.34rem}
+}
