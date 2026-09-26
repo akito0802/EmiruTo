@@ -1,5 +1,5 @@
-const CACHE="emiruto-v2";
-const ASSETS=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg"];
+const CACHE="emiruto-v3";
+const ASSETS=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg","./assets/oshi/normal.jpg","./assets/oshi/happy.jpg","./assets/oshi/sad.jpg","./assets/oshi/night.jpg","./assets/oshi/rare.jpg"];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
 self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
 self.addEventListener("fetch",e=>{
