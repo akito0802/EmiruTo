@@ -11,7 +11,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./styles.css?v=20260926-19" />
+  <link rel="stylesheet" href="./styles.css?v=20260926-20" />
   <title>EmiruTo</title>
 </head>
 <body>
@@ -30,7 +30,7 @@
           <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
           <button data-key="clear" class="key-small">C</button><button data-key="0">0</button><button data-key="back" class="key-small">⌫</button>
         </div>
-        <button id="resetPinBtn" class="text-btn hidden">Googleで再設定（未接続）</button>
+        <button id="resetPinBtn" class="text-btn hidden">Googleでパスコードを再設定</button>
       </div>
     </section>
 
@@ -230,9 +230,25 @@
             <button id="exportCsvBtn" class="secondary-btn">CSVを書き出す</button>
             <button id="resetDemoBtn" class="danger-btn">データを初期化</button>
           </div>
-          <div class="integration-note">
-            <strong>Googleログイン / Google Calendar</strong>
-            <span>未接続。後からFirebase / OAuthを追加できる構造で運用。</span>
+          <div class="cloud-sync-card">
+            <div class="background-push-head">
+              <div>
+                <strong>Googleログイン・クラウド同期</strong>
+                <span>TODO・予定・設定を別端末から自動復元</span>
+              </div>
+              <span id="cloudSyncBadge" class="permission-badge">確認中</span>
+            </div>
+            <div id="cloudProfile" class="cloud-profile hidden">
+              <img id="cloudAvatar" class="cloud-avatar hidden" alt="" />
+              <div><strong id="cloudProfileName">Googleアカウント</strong><span id="cloudProfileEmail"></span></div>
+            </div>
+            <div id="googleSignInButton" class="google-signin"></div>
+            <div class="notification-actions">
+              <button id="cloudSyncNowBtn" type="button" class="primary-mini hidden">今すぐ同期</button>
+              <button id="cloudLogoutBtn" type="button" class="secondary-btn hidden">同期からログアウト</button>
+            </div>
+            <p id="cloudSyncStatus" class="notification-note">Googleログイン設定を確認中…</p>
+            <p class="notification-note">最後に編集した端末の内容を優先して同期するよ。4桁PINや端末固有のPush通知キーはクラウドへ送信しません。</p>
           </div>
         </div>
       </section>
@@ -245,6 +261,15 @@
         <button data-view="settings" class="nav-btn"><span>⚙</span><small>設定</small></button>
       </nav>
     </main>
+
+    <dialog id="googleRecoveryDialog" class="sheet small-sheet">
+      <div class="sheet-head"><span></span><strong>Googleで本人確認</strong><button id="googleRecoveryClose" class="text-btn">閉じる</button></div>
+      <div class="google-recovery-body">
+        <p>この端末に連携したGoogleアカウントで確認できたら、新しい4桁パスコードを設定できるよ。</p>
+        <div id="googleRecoveryButton" class="google-signin"></div>
+        <p id="googleRecoveryStatus" class="notification-note"></p>
+      </div>
+    </dialog>
 
     <dialog id="addDialog" class="sheet">
       <form method="dialog" id="addForm">
@@ -317,7 +342,7 @@
       <div><strong id="reactionTitle">えらい！</strong><p id="reactionText"></p></div>
     </div>
   </div>
-  <script src="./push-config.js?v=20260926-19"></script>
-  <script src="./app.js?v=20260926-19"></script>
+  <script src="./push-config.js?v=20260926-20"></script>
+  <script src="./app.js?v=20260926-20"></script>
 </body>
 </html>
