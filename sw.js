@@ -1,9 +1,10 @@
-const CACHE="emiruto-v16";
+const CACHE="emiruto-v17";
 const ASSETS=[
   "./",
   "./index.html",
-  "./styles.css?v=20260926-16",
-  "./app.js?v=20260926-16",
+  "./styles.css?v=20260926-17",
+  "./app.js?v=20260926-17",
+  "./push-config.js?v=20260926-17",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/oshi/normal.jpg?v=20260926-9",
@@ -82,5 +83,27 @@ self.addEventListener("notificationclick",event=>{
       }catch{}
     }
     if(self.clients.openWindow) await self.clients.openWindow(target);
+  })());
+});
+
+self.addEventListener("push",event=>{
+  let data={};
+  try{data=event.data?event.data.json():{};}catch{
+    try{data={body:event.data?.text()||""};}catch{}
+  }
+  const title=data.title||"EmiruTo";
+  const options={
+    body:data.body||"",
+    tag:data.tag||"emiruto-background",
+    icon:"./icon.svg",
+    badge:"./icon.svg",
+    data:{url:data.url||"./"}
+  };
+  event.waitUntil((async()=>{
+    await self.registration.showNotification(title,options);
+    try{
+      const clients=await self.clients.matchAll({type:"window",includeUncontrolled:true});
+      if(!clients.length&&"setAppBadge" in self.navigator&&data.badge) await self.navigator.setAppBadge(Number(data.badge)||1);
+    }catch{}
   })());
 });
