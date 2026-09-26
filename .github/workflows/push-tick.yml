@@ -1,0 +1,17 @@
+name: EmiruTo Push Tick
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-due:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake API and send due notifications
+        run: |
+          curl --fail --show-error --silent             --retry 3             --retry-delay 20             --max-time 120             -X POST             https://emiruto-push-api.onrender.com/api/send-due
