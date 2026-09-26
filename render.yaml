@@ -18,8 +18,6 @@ services:
 
 databases:
   - name: emiruto-push-db
-    databaseName: emiruto_push_db
-    user: emiruto_push_db_user
     plan: free
     region: singapore
-    postgresMajorVersion: "18"
+    postgresMajorVersion: 18
