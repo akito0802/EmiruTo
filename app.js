@@ -19,6 +19,14 @@
     return {
       version:1,userName:"あなた",pinHash:null,theme:"orange",showOshi:true,stealth:false,quiet:false,
       gentleUntil:null,oshiImage:null,selectedDate:t,calendarCursor:t,minimalOnly:false,
+      notifications:{
+        enabled:false,style:"emiruto",
+        morningEnabled:true,morningTime:"08:00",
+        deadlineEnabled:true,deadline1:60,deadline2:15,
+        eventEnabled:true,eventMinutes:15,
+        unfinishedEnabled:true,unfinishedTime:"21:00",
+        recapEnabled:true,recapTime:"22:30"
+      },notificationLog:{},
       tasks:[
         {id:uid(),title:"レポートの構成を決める",dueDate:t,dueTime:"18:00",priority:"high",progress:40,categories:["大学"],tags:["PC"],color:"#ff8a2b",minimal:true,today:true,completed:false,completedAt:null,postponeCount:0,someday:false,createdAt:new Date().toISOString(),memo:""},
         {id:uid(),title:"ギター練習",dueDate:t,dueTime:"21:00",priority:"normal",progress:0,categories:["音楽"],tags:[],color:"#f2a85a",minimal:false,today:true,completed:false,completedAt:null,postponeCount:0,someday:false,createdAt:new Date().toISOString(),memo:""},
@@ -40,6 +48,7 @@
   let setupPin = "";
   let longPressTimer = null;
   let reactionTimer = null;
+  let notificationTimer = null;
   let calendarFilter = "all";
   let oshiCache = {};
   let recentVisuals = [];
@@ -191,11 +200,15 @@
   async function init(){
     $("#dateLabel").textContent = new Intl.DateTimeFormat("ja-JP",{month:"long",day:"numeric",weekday:"short"}).format(new Date());
     await loadOshiLibrary();
+    ensureNotificationState();
     bind();
     applyTheme();
     renderAll();
     showLock();
-    if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+    if("serviceWorker" in navigator){
+      try{ await navigator.serviceWorker.register("./sw.js"); }catch{}
+    }
+    startNotificationScheduler();
   }
 
   function bind(){
@@ -248,7 +261,14 @@
     $("#themeSelect").addEventListener("change",e=>{state.theme=e.target.value;saveState();applyTheme();});
     $("#oshiToggle").addEventListener("change",e=>{state.showOshi=e.target.checked;saveState();renderHome();});
     $("#stealthToggle").addEventListener("change",e=>{state.stealth=e.target.checked;saveState();applyTheme();renderSettings();});
-    $("#quietToggle").addEventListener("change",e=>{state.quiet=e.target.checked;saveState();});
+    $("#quietToggle").addEventListener("change",e=>{state.quiet=e.target.checked;saveState();renderNotificationSettings();});
+    $("#notificationPermissionBtn").addEventListener("click",requestNotificationPermission);
+    $("#notificationTestBtn").addEventListener("click",()=>sendSystemNotification("test",{}));
+    $("#notificationEnabled").addEventListener("change",e=>{ensureNotificationState();state.notifications.enabled=e.target.checked;saveState();renderNotificationSettings();checkNotifications();});
+    $("#notificationStyle").addEventListener("change",saveNotificationSettingsFromUI);
+    ["notificationMorningTime","notificationUnfinishedTime","notificationRecapTime","notificationEventMinutes","notificationDeadline1","notificationDeadline2",
+      "notificationMorningEnabled","notificationDeadlineEnabled","notificationEventEnabled","notificationUnfinishedEnabled","notificationRecapEnabled"
+    ].forEach(id=>$("#"+id)?.addEventListener("change",saveNotificationSettingsFromUI));
     $("#oshiUpload").addEventListener("change",handleOshiUpload);
     $("#oshiCategorySelect").addEventListener("change",renderOshiLibrary);
     $("#oshiClearCategory").addEventListener("click",clearSelectedOshiCategory);
@@ -277,6 +297,7 @@
     $("#mainApp").classList.remove("hidden");
     renderAll();
     maybeRareMessage();
+    checkNotifications();
   }
   function updatePinDots(){ $$("#pinDots i").forEach((d,i)=>d.classList.toggle("filled",i<pinBuffer.length)); }
   async function handlePin(){
@@ -669,6 +690,185 @@
     el.innerHTML=cards.join("");
   }
 
+  const NOTIFICATION_DEFAULTS = {
+    enabled:false,style:"emiruto",
+    morningEnabled:true,morningTime:"08:00",
+    deadlineEnabled:true,deadline1:60,deadline2:15,
+    eventEnabled:true,eventMinutes:15,
+    unfinishedEnabled:true,unfinishedTime:"21:00",
+    recapEnabled:true,recapTime:"22:30"
+  };
+  function ensureNotificationState(){
+    state.notifications={...NOTIFICATION_DEFAULTS,...(state.notifications||{})};
+    if(!state.notificationLog||typeof state.notificationLog!=="object")state.notificationLog={};
+  }
+  function permissionState(){
+    if(!("Notification" in window))return "unsupported";
+    return Notification.permission||"default";
+  }
+  function renderNotificationSettings(){
+    ensureNotificationState();
+    const n=state.notifications;
+    const perm=permissionState();
+    const badge=$("#notificationPermissionBadge");
+    if(badge){
+      badge.textContent=perm==="granted"?"許可済み":perm==="denied"?"拒否":"未設定";
+      badge.classList.toggle("allowed",perm==="granted");
+      badge.classList.toggle("denied",perm==="denied"||perm==="unsupported");
+    }
+    const set=(id,val,prop="value")=>{const el=$("#"+id);if(el)el[prop]=val;};
+    set("notificationEnabled",!!n.enabled,"checked");
+    set("notificationStyle",n.style||"emiruto");
+    set("notificationMorningTime",n.morningTime||"08:00");
+    set("notificationUnfinishedTime",n.unfinishedTime||"21:00");
+    set("notificationRecapTime",n.recapTime||"22:30");
+    set("notificationEventMinutes",Number(n.eventMinutes??15));
+    set("notificationDeadline1",Number(n.deadline1??60));
+    set("notificationDeadline2",Number(n.deadline2??15));
+    set("notificationMorningEnabled",!!n.morningEnabled,"checked");
+    set("notificationDeadlineEnabled",!!n.deadlineEnabled,"checked");
+    set("notificationEventEnabled",!!n.eventEnabled,"checked");
+    set("notificationUnfinishedEnabled",!!n.unfinishedEnabled,"checked");
+    set("notificationRecapEnabled",!!n.recapEnabled,"checked");
+    const test=$("#notificationTestBtn"), allow=$("#notificationPermissionBtn");
+    if(test)test.disabled=perm!=="granted";
+    if(allow){allow.disabled=perm==="granted"||perm==="unsupported";allow.textContent=perm==="granted"?"通知は許可済み":perm==="denied"?"端末設定から通知を許可":"通知を許可する";}
+  }
+  function saveNotificationSettingsFromUI(){
+    ensureNotificationState();
+    const n=state.notifications;
+    n.style=$("#notificationStyle")?.value||"emiruto";
+    n.morningTime=$("#notificationMorningTime")?.value||"08:00";
+    n.unfinishedTime=$("#notificationUnfinishedTime")?.value||"21:00";
+    n.recapTime=$("#notificationRecapTime")?.value||"22:30";
+    n.eventMinutes=Math.max(0,Number($("#notificationEventMinutes")?.value||15));
+    n.deadline1=Math.max(0,Number($("#notificationDeadline1")?.value||60));
+    n.deadline2=Math.max(0,Number($("#notificationDeadline2")?.value||15));
+    n.morningEnabled=!!$("#notificationMorningEnabled")?.checked;
+    n.deadlineEnabled=!!$("#notificationDeadlineEnabled")?.checked;
+    n.eventEnabled=!!$("#notificationEventEnabled")?.checked;
+    n.unfinishedEnabled=!!$("#notificationUnfinishedEnabled")?.checked;
+    n.recapEnabled=!!$("#notificationRecapEnabled")?.checked;
+    saveState();checkNotifications();
+  }
+  async function requestNotificationPermission(){
+    if(!("Notification" in window)){showReaction("通知に未対応","このブラウザでは通知機能を使えないみたい。","gentle");return;}
+    try{
+      const p=await Notification.requestPermission();
+      if(p==="granted"){ensureNotificationState();state.notifications.enabled=true;saveState();renderNotificationSettings();sendSystemNotification("test",{});}
+      else renderNotificationSettings();
+    }catch{renderNotificationSettings();}
+  }
+  function hhmmNow(){
+    const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  }
+  function notificationKey(kind,id=""){
+    return today()+"|"+kind+"|"+id;
+  }
+  function wasNotified(key){return !!state.notificationLog?.[key];}
+  function markNotified(key){
+    ensureNotificationState();state.notificationLog[key]=Date.now();
+    const cutoff=Date.now()-8*86400000;
+    Object.keys(state.notificationLog).forEach(k=>{if(Number(state.notificationLog[k])<cutoff)delete state.notificationLog[k];});
+    saveState();
+  }
+  function notificationCopy(kind,data={}){
+    const emiru=state.notifications?.style!=="normal";
+    if(kind==="morning"){
+      const c=data.count||0;
+      return emiru?{title:"おはよう🧡",body:`今日のTODOは${c}件。焦らずひとつずついこ〜！`}:{title:"今日のTODO",body:`${c}件あります。`};
+    }
+    if(kind==="deadline"){
+      return emiru?{title:"期限が近いよ🧡",body:`「${data.title}」まであと約${data.minutes}分。今のうちに少し進めよ？`}:{title:"TODOの期限が近づいています",body:`${data.title}：あと約${data.minutes}分`};
+    }
+    if(kind==="event"){
+      return emiru?{title:"もうすぐ予定だよ🧡",body:`${data.minutes}分後に「${data.title}」。準備できた？`}:{title:"予定のリマインダー",body:`${data.title}：${data.minutes}分後`};
+    }
+    if(kind==="unfinished"){
+      return emiru?{title:"今日まだ${data.count}件あるよ",body:"全部じゃなくていいから、ひとつだけ終わらせよ？🧡"}:{title:"未完了TODO",body:`今日の未完了が${data.count}件あります。`};
+    }
+    if(kind==="recap"){
+      return emiru?{title:"今日もおつかれさま🧡",body:`今日は${data.done}件完了！明日のTODOは${data.tomorrow}件だよ。`}:{title:"今日の振り返り",body:`完了${data.done}件・明日${data.tomorrow}件`};
+    }
+    return {title:"EmiruTo",body:emiru?"通知できるようになったよ🧡":"テスト通知です。"};
+  }
+  async function showBrowserNotification(title,body,tag){
+    if(permissionState()!=="granted")return false;
+    const options={body,tag,icon:"./icon.svg",badge:"./icon.svg",data:{url:"./"}};
+    try{
+      const reg=await navigator.serviceWorker?.ready;
+      if(reg){await reg.showNotification(title,options);return true;}
+    }catch{}
+    try{new Notification(title,options);return true;}catch{return false;}
+  }
+  async function sendSystemNotification(kind,data={},key=null){
+    ensureNotificationState();
+    if(kind!=="test"&&(!state.notifications.enabled||state.quiet))return false;
+    if(permissionState()!=="granted"){renderNotificationSettings();return false;}
+    if(key&&wasNotified(key))return false;
+    const copy=notificationCopy(kind,data);
+    const ok=await showBrowserNotification(copy.title,copy.body,key||("emiruto-"+kind+"-"+Date.now()));
+    if(ok&&key)markNotified(key);
+    return ok;
+  }
+  function dueDateTime(date,time){
+    if(!date||!time)return null;
+    const d=new Date(date+"T"+time+":00");return Number.isNaN(d.getTime())?null:d;
+  }
+  function checkDeadlineNotifications(now){
+    const n=state.notifications;
+    if(!n.deadlineEnabled)return;
+    const thresholds=[Number(n.deadline1||0),Number(n.deadline2||0)].filter(x=>x>=0).sort((a,b)=>a-b);
+    state.tasks.filter(t=>!t.completed&&!t.someday&&t.dueDate&&t.dueTime).forEach(t=>{
+      const due=dueDateTime(t.dueDate,t.dueTime);if(!due)return;
+      const diff=(due-now)/60000;if(diff<=0)return;
+      const candidate=thresholds.find(x=>diff<=x);
+      if(candidate===undefined)return;
+      const key=notificationKey("deadline",t.id+"-"+candidate);
+      if(!wasNotified(key))sendSystemNotification("deadline",{title:t.title,minutes:candidate},key);
+      thresholds.filter(x=>x>candidate).forEach(x=>{const skipped=notificationKey("deadline",t.id+"-"+x);if(!wasNotified(skipped))markNotified(skipped);});
+    });
+  }
+  function checkEventNotifications(now){
+    const n=state.notifications;if(!n.eventEnabled)return;
+    const mins=Math.max(0,Number(n.eventMinutes||0));
+    state.events.filter(e=>e.date&&e.start).forEach(e=>{
+      const dt=dueDateTime(e.date,e.start);if(!dt)return;
+      const diff=(dt-now)/60000;if(diff<=0||diff>mins)return;
+      const key=notificationKey("event",e.id+"-"+mins);
+      if(!wasNotified(key))sendSystemNotification("event",{title:e.title,minutes:Math.max(1,Math.ceil(diff))},key);
+    });
+  }
+  function checkNotifications(){
+    ensureNotificationState();
+    const n=state.notifications;
+    if(!n.enabled||state.quiet||permissionState()!=="granted")return;
+    const now=new Date(), current=hhmmNow();
+    if(n.morningEnabled&&current>=n.morningTime){
+      const count=state.tasks.filter(t=>!t.completed&&!t.someday&&(t.today||t.dueDate===today()||(t.dueDate&&t.dueDate<today()))).length;
+      sendSystemNotification("morning",{count},notificationKey("morning"));
+    }
+    checkDeadlineNotifications(now);
+    checkEventNotifications(now);
+    if(n.unfinishedEnabled&&current>=n.unfinishedTime){
+      const count=state.tasks.filter(t=>!t.completed&&!t.someday&&(t.today||t.dueDate===today()||(t.dueDate&&t.dueDate<today()))).length;
+      if(count>0)sendSystemNotification("unfinished",{count},notificationKey("unfinished"));
+    }
+    if(n.recapEnabled&&current>=n.recapTime){
+      const done=state.history.filter(h=>h.type==="task_completed"&&h.date===today()).length;
+      const tomorrowDate=addDays(today(),1);
+      const tomorrow=state.tasks.filter(t=>!t.completed&&!t.someday&&t.dueDate===tomorrowDate).length;
+      sendSystemNotification("recap",{done,tomorrow},notificationKey("recap"));
+    }
+  }
+  function startNotificationScheduler(){
+    clearInterval(notificationTimer);
+    checkNotifications();
+    notificationTimer=setInterval(checkNotifications,30000);
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkNotifications();});
+    window.addEventListener("focus",checkNotifications);
+  }
+
   function renderSettings(){
     $("#userNameInput").value=state.userName||"";
     $("#themeSelect").value=state.theme||"orange";
@@ -677,6 +877,7 @@
     $("#quietToggle").checked=!!state.quiet;
     renderOshiLibrary();
     renderAdoptedCatalog();
+    renderNotificationSettings();
   }
   async function handleOshiUpload(e){
     const files=[...(e.target.files||[])]; if(!files.length)return;
