@@ -1,4 +1,4 @@
-const CACHE="emiruto-v5";
+const CACHE="emiruto-v6";
 const ASSETS=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg","./assets/oshi/normal.jpg","./assets/oshi/happy.jpg","./assets/oshi/sad.jpg","./assets/oshi/night.jpg","./assets/oshi/rare.jpg"];
 self.addEventListener("install",e=>{
   self.skipWaiting();
