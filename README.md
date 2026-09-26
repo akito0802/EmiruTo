@@ -46,3 +46,27 @@ Render側のAPI URLが `https://emiruto-push-api.onrender.com` で公開され�
 
 ## 今後
 Googleログイン、端末間同期、Google Calendar一方向同期、通知の精度向上、衣装・季節差分、レアメッセージ拡充など。
+
+
+## Googleログイン / クラウド同期
+EmiruTo は Render API + PostgreSQL を使ってユーザー別に同期します。
+
+同期対象:
+- TODO
+- 予定
+- 通知設定
+- テーマ / 表示設定
+- 履歴 / 思い出
+
+端末固有として同期しないもの:
+- 4桁PIN
+- Web Push の購読情報 / 秘密キー
+- 端末固有の一時UI状態
+
+競合時は `cloudModifiedAt` を比較し、最後に編集した端末の内容を優先します。
+
+Googleログインを有効化するには、Google Auth Platform で Web application の OAuth Client ID を作成し、
+Authorized JavaScript origins に `https://akito0802.github.io` を登録します。
+作成した Client ID を Render の `emiruto-push-api` の環境変数 `GOOGLE_CLIENT_ID` に設定すると有効になります。
+
+PINを忘れた場合は、あらかじめ連携していたGoogleアカウントで本人確認後、新しい4桁PINを端末上で設定できます。
