@@ -149,6 +149,7 @@ app.get("/api/vapid-public-key", async (_req, res) => {
 app.post("/api/send-due", async (_req, res) => {
   try {
     const result = await sendDueNotifications();
+    console.log("Push sender result", result);
     res.json({ ok: true, ...result });
   } catch (error) {
     console.error(error);
@@ -281,6 +282,7 @@ app.post("/api/schedule", async (req, res) => {
       );
     }
     await client.query("COMMIT");
+    console.log("Push schedule synced", { scheduled: clean.length, earliest: clean[0]?.fireAt || null });
     res.json({ ok: true, scheduled: clean.length });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
