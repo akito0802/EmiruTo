@@ -1,5 +1,26 @@
-const CACHE="emiruto-v6";
-const ASSETS=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg","./assets/oshi/normal.jpg","./assets/oshi/happy.jpg","./assets/oshi/sad.jpg","./assets/oshi/night.jpg","./assets/oshi/rare.jpg"];
+const CACHE="emiruto-v8";
+const ASSETS=[
+  "./",
+  "./index.html",
+  "./styles.css?v=20260926-8",
+  "./app.js?v=20260926-8",
+  "./manifest.webmanifest",
+  "./icon.svg",
+  "./assets/oshi/normal.webp?v=20260926-8",
+  "./assets/oshi/morning.webp?v=20260926-8",
+  "./assets/oshi/cheer.webp?v=20260926-8",
+  "./assets/oshi/happy.webp?v=20260926-8",
+  "./assets/oshi/sad.webp?v=20260926-8",
+  "./assets/oshi/gentle.webp?v=20260926-8",
+  "./assets/oshi/rare.webp?v=20260926-8",
+  "./assets/oshi/rain.webp?v=20260926-8",
+  "./assets/oshi/spring.webp?v=20260926-8",
+  "./assets/oshi/summer.webp?v=20260926-8",
+  "./assets/oshi/halloween.webp?v=20260926-8",
+  "./assets/oshi/christmas.webp?v=20260926-8",
+  "./assets/oshi/newyear.webp?v=20260926-8",
+  "./assets/oshi/apr22.webp?v=20260926-8"
+];
 self.addEventListener("install",e=>{
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
