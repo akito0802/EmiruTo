@@ -27,6 +27,7 @@
         unfinishedEnabled:true,unfinishedTime:"21:00",
         recapEnabled:true,recapTime:"22:30"
       },notificationLog:{},
+      backgroundPush:{enabled:false,clientId:"",secret:"",lastSyncAt:null},
       tasks:[
         {id:uid(),title:"レポートの構成を決める",dueDate:t,dueTime:"18:00",priority:"high",progress:40,categories:["大学"],tags:["PC"],color:"#ff8a2b",minimal:true,today:true,completed:false,completedAt:null,postponeCount:0,someday:false,createdAt:new Date().toISOString(),memo:""},
         {id:uid(),title:"ギター練習",dueDate:t,dueTime:"21:00",priority:"normal",progress:0,categories:["音楽"],tags:[],color:"#f2a85a",minimal:false,today:true,completed:false,completedAt:null,postponeCount:0,someday:false,createdAt:new Date().toISOString(),memo:""},
@@ -49,6 +50,8 @@
   let longPressTimer = null;
   let reactionTimer = null;
   let notificationTimer = null;
+  let pushSyncTimer = null;
+  let pushSyncInProgress = false;
   let calendarFilter = "all";
   let oshiCache = {};
   let recentVisuals = [];
@@ -190,7 +193,10 @@
     try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
     catch { return defaultState(); }
   }
-  function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    if(!pushSyncInProgress) queuePushScheduleSync();
+  }
   async function hashPin(pin){
     const data=new TextEncoder().encode(pin);
     const hash=await crypto.subtle.digest("SHA-256",data);
@@ -201,6 +207,7 @@
     $("#dateLabel").textContent = new Intl.DateTimeFormat("ja-JP",{month:"long",day:"numeric",weekday:"short"}).format(new Date());
     await loadOshiLibrary();
     ensureNotificationState();
+    ensureBackgroundPushState();
     bind();
     applyTheme();
     renderAll();
@@ -209,6 +216,8 @@
       try{ await navigator.serviceWorker.register("./sw.js"); }catch{}
     }
     startNotificationScheduler();
+    refreshBackgroundPushStatus();
+    queuePushScheduleSync();
   }
 
   function bind(){
@@ -264,6 +273,7 @@
     $("#quietToggle").addEventListener("change",e=>{state.quiet=e.target.checked;saveState();renderNotificationSettings();});
     $("#notificationPermissionBtn").addEventListener("click",requestNotificationPermission);
     $("#notificationTestBtn").addEventListener("click",()=>sendSystemNotification("test",{}));
+    $("#backgroundPushBtn").addEventListener("click",toggleBackgroundPush);
     $("#notificationEnabled").addEventListener("change",e=>{ensureNotificationState();state.notifications.enabled=e.target.checked;saveState();renderNotificationSettings();checkNotifications();});
     $("#notificationStyle").addEventListener("change",saveNotificationSettingsFromUI);
     ["notificationMorningTime","notificationUnfinishedTime","notificationRecapTime","notificationEventMinutes","notificationDeadline1","notificationDeadline2",
@@ -733,6 +743,7 @@
     const test=$("#notificationTestBtn"), allow=$("#notificationPermissionBtn");
     if(test)test.disabled=perm!=="granted";
     if(allow){allow.disabled=perm==="granted"||perm==="unsupported";allow.textContent=perm==="granted"?"通知は許可済み":perm==="denied"?"端末設定から通知を許可":"通知を許可する";}
+    renderBackgroundPushStatus();
   }
   function saveNotificationSettingsFromUI(){
     ensureNotificationState();
