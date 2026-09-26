@@ -427,7 +427,7 @@
   function renderHome(){
     const hour=new Date().getHours();
     const gentle=isGentle();
-    const todayTasks=state.tasks.filter(t=>!t.someday && (t.today||t.dueDate===today()) && !t.completed);
+    const todayTasks=state.tasks.filter(t=>!t.someday && !t.completed && (t.dueDate===today() || (!t.dueDate&&t.today)));
     const overdue=state.tasks.filter(t=>!t.completed&&!t.someday&&t.dueDate&&t.dueDate<today());
     const completedToday=state.tasks.filter(t=>t.completed&&t.completedAt?.slice(0,10)===today()).length;
     $("#greeting").textContent=homeGreeting(hour,{
@@ -557,7 +557,9 @@
     if(addType==="task"){
       const title=$("#taskTitle").value.trim(); if(!title){showReaction("タイトルが必要だよ","ひとことだけでも入れてみてね。");return;}
       const priority=$("#taskPriority").value;
-      state.tasks.push({id:uid(),title,dueDate:$("#taskDueDate").value,dueTime:$("#taskDueTime").value,priority,progress:Number($("#taskProgress").value)||0,categories:$("#taskCategory").value.trim()?[ $("#taskCategory").value.trim() ]:[],tags:$("#taskTags").value.split(",").map(x=>x.trim()).filter(Boolean),color:$("#taskColor").value||priorityColor[priority],minimal:$("#taskMinimal").checked,today:$("#taskToday").checked,completed:false,completedAt:null,postponeCount:0,someday:false,createdAt:new Date().toISOString(),memo:$("#taskMemo").value.trim()});
+      const dueDate=$("#taskDueDate").value;
+      const isTodayTask=$("#taskToday").checked && (!dueDate||dueDate===today());
+      state.tasks.push({id:uid(),title,dueDate,dueTime:$("#taskDueTime").value,priority,progress:Number($("#taskProgress").value)||0,categories:$("#taskCategory").value.trim()?[ $("#taskCategory").value.trim() ]:[],tags:$("#taskTags").value.split(",").map(x=>x.trim()).filter(Boolean),color:$("#taskColor").value||priorityColor[priority],minimal:$("#taskMinimal").checked,today:isTodayTask,completed:false,completedAt:null,postponeCount:0,someday:false,createdAt:new Date().toISOString(),memo:$("#taskMemo").value.trim()});
       showReaction("追加できたね🧡",priority==="urgent"?"これ大事そう！忘れないようにしよ〜":"今日もひとつずつ進めよ！");
     } else {
       const title=$("#eventTitle").value.trim(); if(!title||!$("#eventDate").value){showReaction("予定を確認してね","タイトルと日付を入れてね。");return;}
@@ -569,7 +571,7 @@
 
   function showTaskReaction(t){
     if(state.quiet)return;
-    const active=state.tasks.filter(x=>!x.completed&&!x.someday&&(x.today||(x.dueDate&&x.dueDate<=today())));
+    const active=state.tasks.filter(x=>!x.completed&&!x.someday&&((x.dueDate&&x.dueDate<=today())||(!x.dueDate&&x.today)));
     const minimalLeft=active.filter(x=>x.minimal).length;
     const streak=calcStreak();
     let title="やったぁ！", visualCategory="happy", text="";
@@ -669,7 +671,7 @@
   }
   function renderCalendarDay(){
     const ds=state.selectedDate||today();$("#selectedDayLabel").textContent=fmtDate(ds);
-    const tasks=state.tasks.filter(t=>!t.someday&&(t.dueDate===ds||t.today&&ds===today()));
+    const tasks=state.tasks.filter(t=>!t.someday&&(t.dueDate===ds||(!t.dueDate&&t.today&&ds===today())));
     const events=state.events.filter(e=>e.date===ds).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99"));
     let html="";
     if(calendarFilter!=="task"){
