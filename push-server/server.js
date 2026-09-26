@@ -241,7 +241,16 @@ app.post("/api/unsubscribe", async (req, res) => {
 
 initDb()
   .then(ensureVapidKeys)
-  .then(() => app.listen(PORT, "0.0.0.0", () => console.log(`EmiruTo push API listening on ${PORT}`)))
+  .then(() => app.listen(PORT, "0.0.0.0", () => {
+    console.log(`EmiruTo push API listening on ${PORT}`);
+
+    // While the free Render service is awake, check due notifications every minute.
+    // GitHub Actions pings /api/send-due every 5 minutes to keep the service active.
+    const runSender = () => sendDueNotifications().catch(error => console.error("Scheduled push sender failed", error));
+    runSender();
+    const senderTimer = setInterval(runSender, 60_000);
+    senderTimer.unref?.();
+  }))
   .catch(error => {
     console.error(error);
     process.exit(1);
