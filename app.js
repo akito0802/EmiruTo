@@ -73,6 +73,15 @@
     hot: BUILTIN_NORMAL,
     cold: BUILTIN_NORMAL
   };
+  Object.assign(BUILTIN_OSHI,{
+    normal:NORMAL,morning:MORNING,day:CHEER,night:RARE,lateNight:RARE,
+    happy:HAPPY,bigHappy:HAPPY,relief:HAPPY,cheer:CHEER,
+    sad:SAD,pressure:SAD,gentle:GENTLE,rare:RARE,superRare:RARE,
+    spring:SPRING,summer:SUMMER,autumn:NORMAL,winter:CHRISTMAS,rain:RAIN,
+    tanabata:SUMMER,halloween:HALLOWEEN,christmas:CHRISTMAS,newyear:NEWYEAR,
+    apr22:APR22,hot:SUMMER,cold:GENTLE
+  });
+
 
   function loadState(){
     try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
