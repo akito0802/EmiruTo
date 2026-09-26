@@ -65,3 +65,17 @@ body.stealth .brand-mark{background:#fff;color:var(--orange);box-shadow:none;bor
 .catalog-thumb div{padding:6px 7px;background:#fff}
 .catalog-thumb strong{display:block;font-size:.72rem;color:#8e4d24}
 .catalog-thumb span{display:block;margin-top:2px;color:var(--muted);font-size:.58rem;line-height:1.35;min-height:1.6em}
+
+/* Notifications */
+.notification-settings{display:grid;gap:12px;padding:12px;border-radius:18px;background:#fff8f1;border:1px solid #f1dfd0}
+.notification-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.notification-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.notification-grid label,.notification-settings>label{display:grid;gap:6px;font-weight:800;font-size:.78rem}
+.notification-grid input,.notification-settings select{min-width:0}
+.notification-checks{display:grid;grid-template-columns:repeat(2,1fr);gap:7px 10px;padding:10px;border-radius:14px;background:#fff}
+.notification-checks label{display:flex;align-items:center;gap:7px;font-size:.76rem;font-weight:800;color:#725c4f}
+.permission-badge{padding:4px 8px;border-radius:999px;background:#f2efec;color:#766c66;font-size:.64rem;font-weight:850}
+.permission-badge.allowed{background:#e8f8eb;color:#317a45}
+.permission-badge.denied{background:#ffe8e1;color:#b74e31}
+.notification-note{margin:0;color:var(--muted);font-size:.68rem;line-height:1.55}
+@media(max-width:420px){.notification-actions,.notification-grid{grid-template-columns:1fr}}
