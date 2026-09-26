@@ -1,10 +1,10 @@
-const CACHE="emiruto-v18";
+const CACHE="emiruto-v19";
 const ASSETS=[
   "./",
   "./index.html",
-  "./styles.css?v=20260926-18",
-  "./app.js?v=20260926-18",
-  "./push-config.js?v=20260926-18",
+  "./styles.css?v=20260926-19",
+  "./app.js?v=20260926-19",
+  "./push-config.js?v=20260926-19",
   "./manifest.webmanifest",
   "./icon.svg",
   "./assets/oshi/normal.jpg?v=20260926-9",
@@ -70,7 +70,40 @@ self.addEventListener("activate",e=>e.waitUntil(
 ));
 self.addEventListener("fetch",e=>{
   if(e.request.method!=="GET") return;
-  e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(r=>{const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return r;}).catch(()=>caches.match("./index.html"))));
+  const url=new URL(e.request.url);
+  if(url.origin!==self.location.origin) return;
+
+  const needsFresh =
+    e.request.mode==="navigate" ||
+    e.request.destination==="script" ||
+    e.request.destination==="style";
+
+  if(needsFresh){
+    e.respondWith(
+      fetch(e.request,{cache:"no-store"})
+        .then(r=>{
+          if(r&&r.ok){
+            const copy=r.clone();
+            caches.open(CACHE).then(c=>c.put(e.request,copy));
+          }
+          return r;
+        })
+        .catch(()=>caches.match(e.request).then(hit=>hit||caches.match("./index.html")))
+    );
+    return;
+  }
+
+  e.respondWith(
+    caches.match(e.request).then(hit=>
+      hit||fetch(e.request).then(r=>{
+        if(r&&r.ok){
+          const copy=r.clone();
+          caches.open(CACHE).then(c=>c.put(e.request,copy));
+        }
+        return r;
+      }).catch(()=>caches.match("./index.html"))
+    )
+  );
 });
 self.addEventListener("notificationclick",event=>{
   event.notification.close();
