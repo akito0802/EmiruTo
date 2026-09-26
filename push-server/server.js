@@ -156,6 +156,70 @@ app.post("/api/send-due", async (_req, res) => {
   }
 });
 
+app.post("/api/push-status", async (req, res) => {
+  try {
+    const { clientId, secret } = req.body || {};
+    if (!(await authenticate(clientId, secret))) return res.status(401).json({ error: "Unauthorized" });
+    const clientResult = await pool.query(
+      "SELECT updated_at FROM push_clients WHERE client_id=$1",
+      [clientId]
+    );
+    const scheduleResult = await pool.query(
+      `SELECT COUNT(*)::int AS pending,
+              MIN(fire_at) FILTER (WHERE sent_at IS NULL) AS next_fire_at,
+              MAX(sent_at) AS last_sent_at
+         FROM scheduled_notifications
+        WHERE client_id=$1 AND sent_at IS NULL`,
+      [clientId]
+    );
+    res.json({
+      ok: true,
+      subscriptionUpdatedAt: clientResult.rows[0]?.updated_at || null,
+      pending: Number(scheduleResult.rows[0]?.pending || 0),
+      nextFireAt: scheduleResult.rows[0]?.next_fire_at || null,
+      lastSentAt: scheduleResult.rows[0]?.last_sent_at || null
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Push status failed" });
+  }
+});
+
+app.post("/api/test-push", async (req, res) => {
+  try {
+    const { clientId, secret } = req.body || {};
+    if (!(await authenticate(clientId, secret))) return res.status(401).json({ error: "Unauthorized" });
+    const { rows } = await pool.query(
+      "SELECT subscription FROM push_clients WHERE client_id=$1",
+      [clientId]
+    );
+    if (!rows.length) return res.status(404).json({ error: "Subscription not found" });
+
+    await ensureVapidKeys();
+    const payload = JSON.stringify({
+      title: "EmiruTo テスト通知🧡",
+      body: "バックグラウンドPushはちゃんと届いてるよ。",
+      tag: "emiruto-background-test-" + Date.now(),
+      url: "https://akito0802.github.io/EmiruTo/"
+    });
+
+    try {
+      await webpush.sendNotification(rows[0].subscription, payload, { TTL: 300, urgency: "high" });
+      res.json({ ok: true });
+    } catch (error) {
+      const status = Number(error?.statusCode || 0);
+      if (status === 404 || status === 410) {
+        await pool.query("DELETE FROM push_clients WHERE client_id=$1", [clientId]);
+        return res.status(410).json({ error: "Subscription expired" });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Test push failed" });
+  }
+});
+
 app.post("/api/subscribe", async (req, res) => {
   try {
     const { clientId, secret, subscription } = req.body || {};
