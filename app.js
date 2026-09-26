@@ -1328,7 +1328,14 @@
         }else throw error;
       }
       renderNotificationSettings();
-      showReaction("テストPushを送ったよ🧡","数秒以内にiPhoneの通知として出れば、バックグラウンド通知は正常だよ。","happy");
+      if(!state.notifications?.enabled){
+        showReaction("Push経路は正常だよ","ただし「通知を使う」がOFFだから、TODOや予定の通知は送られないよ。設定でONにしてね。","gentle");
+      }else if(state.quiet){
+        showReaction("Push経路は正常だよ","ただし「今日は静かに」がONだから、通常の通知は止まってるよ。","gentle");
+      }else{
+        showReaction("テストPushを送ったよ🧡","数秒以内にiPhoneの通知として出れば、バックグラウンド通知は正常だよ。","happy");
+      }
+      setTimeout(refreshBackgroundPushStatus,300);
     }catch(error){
       console.error(error);
       renderNotificationSettings();
