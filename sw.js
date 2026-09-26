@@ -1,25 +1,25 @@
-const CACHE="emiruto-v8";
+const CACHE="emiruto-v9";
 const ASSETS=[
   "./",
   "./index.html",
-  "./styles.css?v=20260926-8",
-  "./app.js?v=20260926-8",
+  "./styles.css?v=20260926-9",
+  "./app.js?v=20260926-9",
   "./manifest.webmanifest",
   "./icon.svg",
-  "./assets/oshi/normal.webp?v=20260926-8",
-  "./assets/oshi/morning.webp?v=20260926-8",
-  "./assets/oshi/cheer.webp?v=20260926-8",
-  "./assets/oshi/happy.webp?v=20260926-8",
-  "./assets/oshi/sad.webp?v=20260926-8",
-  "./assets/oshi/gentle.webp?v=20260926-8",
-  "./assets/oshi/rare.webp?v=20260926-8",
-  "./assets/oshi/rain.webp?v=20260926-8",
-  "./assets/oshi/spring.webp?v=20260926-8",
-  "./assets/oshi/summer.webp?v=20260926-8",
-  "./assets/oshi/halloween.webp?v=20260926-8",
-  "./assets/oshi/christmas.webp?v=20260926-8",
-  "./assets/oshi/newyear.webp?v=20260926-8",
-  "./assets/oshi/apr22.webp?v=20260926-8"
+  "./assets/oshi/normal.jpg?v=20260926-9",
+  "./assets/oshi/morning.jpg?v=20260926-9",
+  "./assets/oshi/cheer.jpg?v=20260926-9",
+  "./assets/oshi/happy.jpg?v=20260926-9",
+  "./assets/oshi/sad.jpg?v=20260926-9",
+  "./assets/oshi/gentle.jpg?v=20260926-9",
+  "./assets/oshi/rare.jpg?v=20260926-9",
+  "./assets/oshi/rain.jpg?v=20260926-9",
+  "./assets/oshi/spring.jpg?v=20260926-9",
+  "./assets/oshi/summer.jpg?v=20260926-9",
+  "./assets/oshi/halloween.jpg?v=20260926-9",
+  "./assets/oshi/christmas.jpg?v=20260926-9",
+  "./assets/oshi/newyear.jpg?v=20260926-9",
+  "./assets/oshi/apr22.jpg?v=20260926-9"
 ];
 self.addEventListener("install",e=>{
   self.skipWaiting();
