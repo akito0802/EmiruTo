@@ -255,7 +255,7 @@ app.post("/api/schedule", async (req, res) => {
     const maxFuture = now + 45 * 86400000;
     const clean = notifications.flatMap(n => {
       const fireMs = Date.parse(n?.fireAt || "");
-      if (!n?.id || !Number.isFinite(fireMs) || fireMs < now - 60000 || fireMs > maxFuture) return [];
+      if (!n?.id || !Number.isFinite(fireMs) || fireMs < now - 20 * 60000 || fireMs > maxFuture) return [];
       const title = String(n.title || "EmiruTo").slice(0, 100);
       const body = String(n.body || "").slice(0, 240);
       const tag = String(n.tag || n.id).slice(0, 120);
