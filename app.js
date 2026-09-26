@@ -42,6 +42,7 @@
   let reactionTimer = null;
   let calendarFilter = "all";
   let oshiCache = {};
+  let recentVisuals = [];
   const OSHI_DB = "emiruto_media_v1";
   const OSHI_STORE = "oshiImages";
   const A="./assets/oshi/adopted/";
@@ -101,6 +102,80 @@
     hot:[A+"v2.jpg?v=20260926-14",A+"v8.jpg?v=20260926-14",A+"v15.jpg?v=20260926-14",A+"v21.jpg?v=20260926-14"],
     cold:[A+"v1.jpg?v=20260926-14",A+"v7.jpg?v=20260926-14",A+"v11.jpg?v=20260926-14",A+"v14.jpg?v=20260926-14",A+"v18.jpg?v=20260926-14",A+"v20.jpg?v=20260926-14"]
   };
+
+  const REACTION_LINES = {
+    normal:["今日もひとつずついこ〜！","無理なく進めれば大丈夫。今日も応援してる🧡","できるところから始めよっか。"],
+    morning:["おはよう〜！今日もゆっくり始めよ🧡","朝から来てくれてうれしい。まずひとつだけやろ？","眠くても大丈夫、最初の一歩だけいこ〜！"],
+    day:["ここまでちゃんと進めてるのえらい！","午後も焦らずひとつずつね🧡","まだまだいけるよ、でも無理はしないでね。"],
+    night:["今日もおつかれさま。あと少しだけね🧡","夜まで頑張ってるの、ちゃんと見えてるよ。","ここまで来たら、残りはゆっくりで大丈夫。"],
+    lateNight:["こんな時間までほんとにおつかれさま。無理しすぎないでね。","もう十分頑張ってるよ。今日はここで終わっても大丈夫🧡","夜更かししすぎないでね。ひと区切りつけよ？"],
+    happy:["やったぁ！ちゃんと終わらせたのえらい〜！","ひとつ完了！この調子すごくいい🧡","終わった〜！頑張った分ちゃんと進んでるよ。"],
+    bigHappy:["え、もう終わったの！？すごすぎる🧡","今日はかなり頑張ったじゃん！ほんとにえらい！","これは大拍手したいくらいすごい〜！"],
+    relief:["間に合った〜！ちゃんとやり切ったのえらい！","終わってほっとしたね。おつかれさま🧡","ちゃんと最後までやったの、本当にえらいよ。"],
+    cheer:["いけるいける！あとちょっとだけ一緒に頑張ろ🧡","ここまで来たなら大丈夫。焦らず続けよ！","進んでるよ〜！そのままで大丈夫！"],
+    sad:["残ってるのあるね…でも今からひとつだけでも一緒にやろ？","まだ終わってなくても大丈夫。今できるぶんからいこ。","ちょっと遅れちゃったね。でもここから戻せるよ。"],
+    pressure:["そろそろやっとこ？終わったら絶対すっきりするよ。","また延期だ〜。今日は少しだけでも触ってみよ？","何回か後回しになってるね。ひとつだけ進めよっか。"],
+    gentle:["今日は無理しすぎなくていいよ。できるぶんだけで十分🧡","ひとつできたらそれで充分。今日は自分にやさしくね。","頑張れない日もあるよ。ここに来ただけでもえらい。"],
+    rare:["今日も来てくれた。ちょっと待ってたかも🧡","ちゃんと頑張ってるの見てると、なんか嬉しい。","今日のあなた、ちょっと好きかも。…頑張ってるからね🧡","もう少しだけここにいてもいい？なんてね。"],
+    superRare:["今日も頑張ってるの見てたら、もう少しだけそばにいたくなっちゃった。","そんなふうに頑張られたら、もっと好きになっちゃうじゃん。…なんてね🧡","今日は特別。頑張ったあなたにだけ、ちょっと近くで褒めたい。"],
+    spring:["春っぽい日だね。今日は少し軽やかにいこ〜🌸","新しい季節みたいに、ひとつずつ始めよ🧡"],
+    summer:["暑い日も無理せずいこ〜！水分とってね。","夏の日も、できるぶんだけで十分！"],
+    autumn:["ちょっと落ち着く季節だね。今日もゆっくり進めよ。","秋っぽい空気、なんか頑張れそう🧡"],
+    winter:["寒いね〜。あったかくして、無理せずいこ。","冬の日はゆっくりで大丈夫。ひとつずつね🧡"],
+    rain:["雨の日はちょっとゆっくりでもいいよ。","雨でも来てくれたのえらい。今日はやさしくいこ☔"],
+    tanabata:["今日は七夕だね。願いごとひとつ叶えるつもりで進めよ🎋"],
+    halloween:["ハッピーハロウィン〜！今日のTODOもひとつずつ🎃"],
+    christmas:["メリークリスマス🎄 今日も頑張っててえらい🧡"],
+    newyear:["あけましておめでとう！今年もひとつずつ一緒にいこ🧡"],
+    apr22:["今日は特別な日だね🧡 いつもよりちょっとだけ楽しくいこ！"],
+    hot:["暑いから無理しないでね。水分と休憩もTODOだよ。"],
+    cold:["寒い〜。あったかくしてから始めよ？"]
+  };
+
+  function ensureReactionState(){
+    if(!Array.isArray(state.reactionHistory)) state.reactionHistory=[];
+    if(!Array.isArray(state.rareMemories)) state.rareMemories=[];
+    if(!Array.isArray(state.visualHistory)) state.visualHistory=[];
+  }
+  function visualKey(src){
+    if(!src)return "";
+    return src.startsWith("data:")?"custom:"+src.slice(-48):src.replace(/\?.*$/,"");
+  }
+  function chooseFreshVisual(pool){
+    if(!pool.length)return null;
+    ensureReactionState();
+    const recent=[...recentVisuals,...state.visualHistory.slice(-8).map(x=>x.key)].slice(-10);
+    let candidates=pool.filter(src=>!recent.includes(visualKey(src)));
+    if(!candidates.length)candidates=pool;
+    const src=candidates[Math.floor(Math.random()*candidates.length)];
+    const key=visualKey(src);
+    recentVisuals.push(key); if(recentVisuals.length>8)recentVisuals.shift();
+    state.visualHistory.push({key,at:new Date().toISOString()});
+    state.visualHistory=state.visualHistory.slice(-30);
+    return src;
+  }
+  function daysAgo(date){
+    const d=new Date((date||today())+"T00:00:00");
+    return Math.floor((new Date(today()+"T00:00:00")-d)/86400000);
+  }
+  function pickReactionLine(category,fallback=""){
+    ensureReactionState();
+    const lines=REACTION_LINES[category]||REACTION_LINES.normal;
+    const recent=new Set(state.reactionHistory.filter(x=>daysAgo(x.date)<=30).map(x=>x.text));
+    const pool=lines.filter(x=>!recent.has(x));
+    const source=pool.length?pool:lines;
+    return source[Math.floor(Math.random()*source.length)]||fallback;
+  }
+  function stableHomeLine(category){
+    const lines=REACTION_LINES[category]||REACTION_LINES.normal;
+    const seed=(today()+category+Math.floor(new Date().getHours()/6)).split("").reduce((a,c)=>((a*31)+c.charCodeAt(0))>>>0,7);
+    return lines[seed%lines.length];
+  }
+  function recordReaction(category,text,image){
+    ensureReactionState();
+    state.reactionHistory.push({id:uid(),category,text,image:visualKey(image),date:today(),at:new Date().toISOString()});
+    state.reactionHistory=state.reactionHistory.slice(-120);
+  }
 
   function loadState(){
     try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
@@ -247,14 +322,11 @@
     $("#todayRate").textContent=rate+"%";
     $("#streakCount").textContent=calcStreak()+"日";
 
-    const msg = gentle ? "今日は無理しすぎなくていいよ。できるぶんだけで十分🧡" :
-      rate===100 ? "今日ぜんぶ終わってる！ほんとにえらい〜🧡" :
-      overdue.length ? "残ってるのあるね…でも今からひとつだけでも一緒にやろ？" :
-      hour>=22 ? "こんな時間までおつかれさま。あと少しだけね🧡" :
-      "今日もひとつずついこ〜！";
+    const homeCategory=homeOshiCategory(hour,gentle,overdue.length,rate);
+    const msg = rate===100&&!gentle ? "今日ぜんぶ終わってる！ほんとにえらい〜🧡" : stableHomeLine(homeCategory);
     $("#oshiMessage").textContent=msg;
     $("#oshiPanel").classList.toggle("hidden",!state.showOshi||state.stealth);
-    const homeVisual = pickOshiImage(homeOshiCategory(hour,gentle,overdue.length,rate));
+    const homeVisual = pickOshiImage(homeCategory);
     setOshiElement($("#oshiImage"), $("#oshiFallback"), homeVisual);
 
     $("#minimalToggle").classList.toggle("active",state.minimalOnly);
@@ -307,11 +379,22 @@
   }
   function handleTaskAction(id,action){
     const t=state.tasks.find(x=>x.id===id); if(!t)return;
+    let reaction=null;
     if(action==="progress"){
-      const v=prompt("進捗を0〜100で入力",String(t.progress||0)); if(v===null)return;
+      const before=Number(t.progress||0);
+      const v=prompt("進捗を0〜100で入力",String(before)); if(v===null)return;
       t.progress=Math.max(0,Math.min(100,Number(v)||0));
+      const crossed=[25,50,75].filter(x=>before<x&&t.progress>=x).pop();
+      if(crossed) reaction={title:crossed===75?"あとちょっと！":"進んでる〜！",text:pickReactionLine("cheer"),category:"cheer"};
     }
-    if(action==="postpone"){ t.dueDate=addDays(t.dueDate||today(),1);t.today=false;t.postponeCount=(t.postponeCount||0)+1;state.history.push({id:uid(),type:"postponed",title:t.title,date:today(),at:new Date().toISOString()}); }
+    if(action==="postpone"){
+      t.dueDate=addDays(t.dueDate||today(),1);t.today=false;t.postponeCount=(t.postponeCount||0)+1;
+      state.history.push({id:uid(),type:"postponed",title:t.title,date:today(),at:new Date().toISOString()});
+      const n=t.postponeCount;
+      const category=isGentle()?"gentle":n>=3?"pressure":"gentle";
+      const title=n>=5&&!isGentle()?"そろそろやろっか":n>=3&&!isGentle()?"また延期だ〜":"今日は切り替えよ";
+      reaction={title,text:pickReactionLine(category),category};
+    }
     if(action==="minimal") t.minimal=!t.minimal;
     if(action==="priority"){
       const order=["low","normal","high","urgent"]; t.priority=order[(order.indexOf(t.priority)+1)%order.length]; t.color=priorityColor[t.priority];
@@ -321,6 +404,7 @@
       if(confirm("このTODOを削除する？")) state.tasks=state.tasks.filter(x=>x.id!==id);
     }
     saveState(); $("#actionDialog").close(); renderAll();
+    if(reaction&&!state.quiet) showReaction(reaction.title,reaction.text,reaction.category);
   }
 
   function openAdd(){
@@ -346,21 +430,42 @@
 
   function showTaskReaction(t){
     if(state.quiet)return;
-    let text="ちゃんと終わらせたのえらい〜！";
-    let visualCategory="happy";
-    if(isGentle()){ text="ひとつ終わったね。今日はそれだけでも十分すごいよ🧡"; visualCategory="gentle"; }
-    else if(t.dueDate){
+    const active=state.tasks.filter(x=>!x.completed&&!x.someday&&(x.today||(x.dueDate&&x.dueDate<=today())));
+    const minimalLeft=active.filter(x=>x.minimal).length;
+    const streak=calcStreak();
+    let title="やったぁ！", visualCategory="happy", text="";
+
+    if(isGentle()){ title="ひとつできたね"; visualCategory="gentle"; text=pickReactionLine("gentle"); }
+    else if(active.length===0){
+      title="今日ぜんぶ終わった〜！";
+      visualCategory="bigHappy";
+      text=pickReactionLine("bigHappy");
+    } else if(t.minimal&&minimalLeft===0){
+      title="最低限クリア🧡";
+      visualCategory="relief";
+      text="今日の最低限、全部できたよ。ここまでで充分えらい！";
+    } else if([3,7,14,30].includes(streak)){
+      title=streak+"日連続！";
+      visualCategory="bigHappy";
+      text="続けてるのがいちばんすごい。"+streak+"日、本当にえらい🧡";
+    } else if(t.dueDate){
       const diff=(new Date(t.dueDate+"T00:00:00")-new Date(today()+"T00:00:00"))/86400000;
-      if(diff>=2){ text="え、もう終わったの！？早すぎてびっくりした🧡"; visualCategory="bigHappy"; }
-      else if(diff===0){ text="間に合った〜！ちゃんとやり切ったのえらい！"; visualCategory="relief"; }
-      else if(diff<0){ text="遅れても、ちゃんと終わらせたのほんとにえらいよ。"; visualCategory="relief"; }
+      if(diff>=2){ visualCategory="bigHappy"; text="え、もう終わったの！？早すぎてびっくりした🧡"; }
+      else if(diff===0){ visualCategory="relief"; text=pickReactionLine("relief"); }
+      else if(diff<0){ visualCategory="relief"; text="遅れても、ちゃんと終わらせたのほんとにえらいよ。"; }
     }
-    if(t.priority==="urgent"){ text+=" 大事なやつ終わったの、かなりすごい。"; visualCategory="bigHappy"; }
-    showReaction("やったぁ！",text,visualCategory);
+    if(!text) text=pickReactionLine(visualCategory);
+    if(t.priority==="urgent"&&visualCategory!=="gentle"){visualCategory="bigHappy";text+=" 大事なやつ終わったの、かなりすごい。";}
+    showReaction(title,text,visualCategory);
   }
   function showReaction(title,text,visualCategory="normal"){
-    $("#reactionTitle").textContent=title;$("#reactionText").textContent=text;
-    setOshiElement($("#reactionImage"), $("#reactionFallback"), pickOshiImage(visualCategory));
+    ensureReactionState();
+    const finalText=text||pickReactionLine(visualCategory);
+    const image=pickOshiImage(visualCategory);
+    $("#reactionTitle").textContent=title;$("#reactionText").textContent=finalText;
+    setOshiElement($("#reactionImage"), $("#reactionFallback"), image);
+    recordReaction(visualCategory,finalText,image);
+    saveState();
     $("#reaction").classList.remove("hidden");
     clearTimeout(reactionTimer);reactionTimer=setTimeout(()=>$("#reaction").classList.add("hidden"),4200);
   }
@@ -377,22 +482,33 @@
 
   function maybeRareMessage(){
     if(state.stealth||!state.showOshi)return;
-    let p=.012;
+    ensureReactionState();
     const rate=Number($("#todayRate").textContent.replace("%",""))||0;
-    if(rate>=80)p+=.025;if(isGentle())p+=.025;if(new Date().getHours()>=22)p+=.015;
-    if(Math.random()<p){
-      const superRare=Math.random()<.12;
-      const messages=superRare?[
-        "今日も頑張ってるの見てたら、もう少しだけそばにいたくなっちゃった。",
-        "そんなふうに頑張られたら、もっと好きになっちゃうじゃん。…なんてね🧡"
-      ]:[
-        "ちゃんと頑張ってるの、見てるとなんか嬉しい。",
-        "今日も来てくれた。ちょっと待ってたかも🧡"
-      ];
-      const text=messages[Math.floor(Math.random()*messages.length)];
-      if(superRare&&!state.rareMemories.some(x=>x.text===text)){state.rareMemories.push({id:uid(),text,date:today()});saveState();}
-      showReaction(superRare?"…ねえ🧡":"ちょっとだけ",text,superRare?"superRare":"rare");
+    const hour=new Date().getHours(), streak=calcStreak();
+    let rareP=.02, superP=.003;
+    if(rate>=80)rareP+=.02;
+    if(isGentle())rareP+=.015;
+    if(hour>=22)rareP+=.015;
+    if(streak>=7)rareP+=.005;
+    rareP=Math.min(.08,rareP);
+    if(rate===100&&streak>=7)superP+=.001;
+    if(hour>=22)superP+=.0005;
+    superP=Math.min(.005,superP);
+
+    if(Math.random()<superP){
+      const text=pickReactionLine("superRare");
+      const image=pickOshiImage("superRare");
+      state.rareMemories.push({id:uid(),text,date:today(),at:new Date().toISOString(),image:visualKey(image)});
+      state.rareMemories=state.rareMemories.slice(-50);
+      recordReaction("superRare",text,image);
+      saveState();
+      $("#reactionTitle").textContent="…ねえ🧡";$("#reactionText").textContent=text;
+      setOshiElement($("#reactionImage"),$("#reactionFallback"),image);
+      $("#reaction").classList.remove("hidden");
+      clearTimeout(reactionTimer);reactionTimer=setTimeout(()=>$("#reaction").classList.add("hidden"),5200);
+      return;
     }
+    if(Math.random()<rareP) showReaction("ちょっとだけ",pickReactionLine("rare"),"rare");
   }
 
   function moveMonth(n){
@@ -445,6 +561,9 @@
     state.history.slice().reverse().forEach(h=>{(groups[h.date]??=[]).push(h);});
     const entries=Object.entries(groups).sort((a,b)=>b[0].localeCompare(a[0]));
     $("#historyList").innerHTML=entries.length?entries.map(([d,items])=>`<article class="history-card"><strong>${fmtDate(d)}</strong><p>${items.map(x=>x.type==="task_completed"?"✓ "+esc(x.title):"↷ 延期 "+esc(x.title)).join("<br>")}</p></article>`).join(""):'<div class="empty-state">まだ履歴はないよ</div>';
+    const memories=(state.rareMemories||[]).slice().reverse();
+    const memoryEl=$("#rareMemoryList");
+    if(memoryEl) memoryEl.innerHTML=memories.length?memories.map(m=>`<article class="history-card memory-card"><strong>🧡 ${fmtDate(m.date)}</strong><p>${esc(m.text)}</p></article>`).join(""):'<div class="empty-state">超レアキュンが出ると、ここに思い出として残るよ。</div>';
   }
   function calcStreak(){
     const dates=new Set(state.history.filter(h=>h.type==="task_completed").map(h=>h.date));
@@ -496,15 +615,16 @@
     });
   }
   function pickOshiImage(category="normal"){
-    const preferred=oshiCache[category]||[];
-    if(preferred.length) return preferred[Math.floor(Math.random()*preferred.length)].dataUrl;
+    const preferred=(oshiCache[category]||[]).map(x=>x.dataUrl).filter(Boolean);
+    if(preferred.length) return chooseFreshVisual(preferred);
     const adopted=ADOPTED_OSHI[category]||ADOPTED_OSHI.normal||[];
-    if(adopted.length) return adopted[Math.floor(Math.random()*adopted.length)];
+    if(adopted.length) return chooseFreshVisual(adopted);
     const builtins=Array.isArray(BUILTIN_OSHI[category])?BUILTIN_OSHI[category]:(BUILTIN_OSHI[category]?[BUILTIN_OSHI[category]]:[]);
-    if(builtins.length) return builtins[Math.floor(Math.random()*builtins.length)];
-    const fallback=oshiCache.normal||[];
-    if(fallback.length) return fallback[Math.floor(Math.random()*fallback.length)].dataUrl;
-    const fallbackBuiltins=Array.isArray(BUILTIN_OSHI.normal)?BUILTIN_OSHI.normal:[BUILTIN_OSHI.normal].filter(Boolean); return state.oshiImage||fallbackBuiltins[0]||null;
+    if(builtins.length) return chooseFreshVisual(builtins);
+    const fallback=(oshiCache.normal||[]).map(x=>x.dataUrl).filter(Boolean);
+    if(fallback.length) return chooseFreshVisual(fallback);
+    const fallbackBuiltins=Array.isArray(BUILTIN_OSHI.normal)?BUILTIN_OSHI.normal:[BUILTIN_OSHI.normal].filter(Boolean);
+    return state.oshiImage||chooseFreshVisual(fallbackBuiltins)||null;
   }
   function setOshiElement(imgEl,fallbackEl,src){
     if(!imgEl||!fallbackEl)return;
@@ -537,6 +657,18 @@
     const userCards=items.map(item=>`<div class="oshi-thumb"><img src="${item.dataUrl}" alt=""><button type="button" data-remove-oshi="${item.id}" aria-label="削除">×</button></div>`).join("");
     $("#oshiLibraryGrid").innerHTML=(adoptedCards+builtinCards+userCards)||'<div class="empty-state" style="grid-column:1/-1">まだ画像がないよ</div>';
   }
+  function renderAdoptedCatalog(){
+    const el=$("#adoptedCatalog"); if(!el)return;
+    const labelMap={normal:"通常",morning:"朝",day:"昼",night:"夜",lateNight:"深夜",happy:"喜び",bigHappy:"大喜び",relief:"ほっと",cheer:"応援",sad:"しょんぼり",pressure:"ちょい圧",gentle:"しんどい",rare:"レア",superRare:"超レア",spring:"春",summer:"夏",autumn:"秋",winter:"冬",rain:"雨",tanabata:"七夕",halloween:"ハロウィン",christmas:"クリスマス",newyear:"正月",apr22:"4/22",hot:"暑い",cold:"寒い"};
+    const cards=[];
+    for(let i=1;i<=30;i++){
+      const path=A+"v"+i+".jpg";
+      const categories=Object.entries(ADOPTED_OSHI).filter(([,arr])=>arr.some(src=>src.includes("/v"+i+".jpg"))).map(([k])=>labelMap[k]||k);
+      cards.push(`<div class="catalog-thumb"><img src="${path}?v=20260926-14" alt="v${i}"><div><strong>v${i}</strong><span>${categories.slice(0,4).join("・")||"予備"}</span></div></div>`);
+    }
+    el.innerHTML=cards.join("");
+  }
+
   function renderSettings(){
     $("#userNameInput").value=state.userName||"";
     $("#themeSelect").value=state.theme||"orange";
@@ -544,6 +676,7 @@
     $("#stealthToggle").checked=!!state.stealth;
     $("#quietToggle").checked=!!state.quiet;
     renderOshiLibrary();
+    renderAdoptedCatalog();
   }
   async function handleOshiUpload(e){
     const files=[...(e.target.files||[])]; if(!files.length)return;
