@@ -4,6 +4,7 @@ const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const webpush = require("web-push");
 const { pool, initDb } = require("./db");
+const { createAuthSyncRouter } = require("./auth-sync");
 
 const app = express();
 const PORT = Number(process.env.PORT || 10000);
@@ -13,16 +14,17 @@ const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "https://akito0802.github.io/
 let vapidKeys = null;
 
 app.set("trust proxy", 1);
-app.use(express.json({ limit: "256kb" }));
+app.use(express.json({ limit: "1mb" }));
 app.use(cors({
   origin(origin, callback) {
     if (!origin || origin === allowedOrigin) return callback(null, true);
     return callback(new Error("Origin not allowed"));
   },
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 app.use("/api/", rateLimit({ windowMs: 60_000, limit: 120, standardHeaders: true, legacyHeaders: false }));
+app.use("/api", createAuthSyncRouter(pool));
 
 function hashSecret(secret) {
   return crypto.createHash("sha256").update(String(secret)).digest("hex");
