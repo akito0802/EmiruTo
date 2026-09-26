@@ -18,6 +18,34 @@ async function initDb() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS app_users (
+      user_id UUID PRIMARY KEY,
+      google_sub TEXT UNIQUE NOT NULL,
+      email TEXT,
+      name TEXT,
+      picture TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_login_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS app_sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES app_users(user_id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS app_sessions_expiry_idx
+      ON app_sessions (expires_at);
+
+    CREATE TABLE IF NOT EXISTS user_sync (
+      user_id UUID PRIMARY KEY REFERENCES app_users(user_id) ON DELETE CASCADE,
+      payload JSONB NOT NULL,
+      client_modified_at TIMESTAMPTZ NOT NULL,
+      device_id TEXT,
+      server_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS push_clients (
       client_id TEXT PRIMARY KEY,
       secret_hash TEXT NOT NULL,
