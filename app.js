@@ -2,6 +2,8 @@
   const $ = (s, root=document) => root.querySelector(s);
   const $$ = (s, root=document) => [...root.querySelectorAll(s)];
   const STORAGE_KEY = "emiruto_state_v1";
+  const AUTH_KEY = "emiruto_auth_v1";
+  const DEVICE_KEY = "emiruto_device_id_v1";
   const iso = (d=new Date()) => {
     const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
     return `${y}-${m}-${day}`;
@@ -18,7 +20,7 @@
     const t=today();
     return {
       version:1,userName:"あなた",pinHash:null,theme:"orange",showOshi:true,stealth:false,quiet:false,
-      gentleUntil:null,oshiImage:null,selectedDate:t,calendarCursor:t,minimalOnly:false,
+      gentleUntil:null,oshiImage:null,selectedDate:t,calendarCursor:t,minimalOnly:false,cloudModifiedAt:null,
       notifications:{
         enabled:false,style:"emiruto",
         morningEnabled:true,morningTime:"08:00",
@@ -52,11 +54,20 @@
   let notificationTimer = null;
   let pushSyncTimer = null;
   let pushSyncInProgress = false;
+  let cloudAuth = loadCloudAuth();
+  let cloudSyncTimer = null;
+  let cloudSyncInProgress = false;
+  let cloudSyncHydrating = false;
+  let cloudLastFingerprint = "";
+  let googleConfig = null;
+  let googleIdentityReady = false;
+  let googleScriptPromise = null;
   let calendarFilter = "all";
   let oshiCache = {};
   let recentVisuals = [];
   const OSHI_DB = "emiruto_media_v1";
   const OSHI_STORE = "oshiImages";
+  cloudLastFingerprint=cloudFingerprint(state);
   const A="./assets/oshi/adopted/";
   const BUILTIN_OSHI = {
     normal:[A+"v1.jpg?v=20260926-10",A+"v2.jpg?v=20260926-10",A+"v5.jpg?v=20260926-10",A+"v28.jpg?v=20260926-14"],
@@ -189,11 +200,41 @@
     state.reactionHistory=state.reactionHistory.slice(-120);
   }
 
+  function cloudPayloadFromState(source=state){
+    return {
+      version:1,
+      userName:source.userName||"あなた",
+      theme:source.theme||"orange",
+      showOshi:source.showOshi!==false,
+      stealth:!!source.stealth,
+      quiet:!!source.quiet,
+      gentleUntil:source.gentleUntil||null,
+      notifications:{...(source.notifications||{})},
+      tasks:Array.isArray(source.tasks)?source.tasks:[],
+      events:Array.isArray(source.events)?source.events:[],
+      history:Array.isArray(source.history)?source.history:[],
+      rareMemories:Array.isArray(source.rareMemories)?source.rareMemories:[]
+    };
+  }
+  function cloudFingerprint(source=state){
+    try{return JSON.stringify(cloudPayloadFromState(source));}catch{return "";}
+  }
   function loadState(){
-    try { return {...defaultState(), ...(JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{})}; }
+    try {
+      const raw=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+      const next={...defaultState(), ...(raw||{})};
+      if(raw&&!next.cloudModifiedAt) next.cloudModifiedAt=new Date().toISOString();
+      return next;
+    }
     catch { return defaultState(); }
   }
   function saveState(){
+    const fingerprint=cloudFingerprint(state);
+    if(!cloudSyncHydrating&&fingerprint!==cloudLastFingerprint){
+      cloudLastFingerprint=fingerprint;
+      state.cloudModifiedAt=new Date().toISOString();
+      queueCloudSync();
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     if(!pushSyncInProgress) queuePushScheduleSync();
   }
@@ -207,6 +248,7 @@
     $("#dateLabel").textContent = new Intl.DateTimeFormat("ja-JP",{month:"long",day:"numeric",weekday:"short"}).format(new Date());
     ensureNotificationState();
     ensureBackgroundPushState();
+    cloudLastFingerprint=cloudFingerprint(state);
 
     // Bind controls before any storage/network work so the UI never becomes untappable.
     bind();
@@ -225,6 +267,7 @@
     startNotificationScheduler();
     refreshBackgroundPushStatus();
     queuePushScheduleSync();
+    initCloudSync();
   }
 
   function bind(){
@@ -238,7 +281,7 @@
       if(pinBuffer.length===4) await handlePin();
     });
 
-    $("#resetPinBtn").addEventListener("click",()=>showReaction("Google連携はまだ未接続","今は端末内の初期化から再設定してね。"));
+    $("#resetPinBtn").addEventListener("click",openGoogleRecovery);
 
     $$(".nav-btn").forEach(btn=>btn.addEventListener("click",()=>switchView(btn.dataset.view)));
     $("#addBtn").addEventListener("click",openAdd);
@@ -296,6 +339,9 @@
     $("#exportJsonBtn").addEventListener("click",exportJson);
     $("#exportCsvBtn").addEventListener("click",exportCsv);
     $("#resetDemoBtn").addEventListener("click",resetData);
+    $("#cloudSyncNowBtn").addEventListener("click",()=>syncCloudNow(true));
+    $("#cloudLogoutBtn").addEventListener("click",logoutCloud);
+    $("#googleRecoveryClose").addEventListener("click",()=>$("#googleRecoveryDialog").close());
 
     const avatar=$("#oshiAvatar");
     ["pointerdown","touchstart"].forEach(evt=>avatar.addEventListener(evt,startGentlePress,{passive:true}));
@@ -306,6 +352,7 @@
     $("#lockScreen").classList.remove("hidden");
     $("#mainApp").classList.add("hidden");
     $("#resetPinBtn").classList.toggle("hidden",!state.pinHash);
+    $("#resetPinBtn").textContent=cloudAuth.linkedUserId?"Googleでパスコードを再設定":"Google再設定（未連携）";
     $("#lockMessage").textContent = state.pinHash ? "4桁のパスコードを入力" : "最初に4桁のパスコードを決めよう";
     pinBuffer=""; updatePinDots();
   }
@@ -720,6 +767,320 @@
       cards.push(`<div class="catalog-thumb"><img src="${path}?v=20260926-14" alt="v${i}"><div><strong>v${i}</strong><span>${categories.slice(0,4).join("・")||"予備"}</span></div></div>`);
     }
     el.innerHTML=cards.join("");
+  }
+
+  function loadCloudAuth(){
+    try{
+      return {
+        linkedUserId:"",sessionToken:"",expiresAt:null,user:null,lastSyncAt:null,
+        ...(JSON.parse(localStorage.getItem(AUTH_KEY)||"null")||{})
+      };
+    }catch{
+      return {linkedUserId:"",sessionToken:"",expiresAt:null,user:null,lastSyncAt:null};
+    }
+  }
+  function saveCloudAuth(){
+    localStorage.setItem(AUTH_KEY,JSON.stringify(cloudAuth));
+    renderCloudSyncStatus();
+    showLockRecoveryState();
+  }
+  function showLockRecoveryState(){
+    const btn=$("#resetPinBtn");
+    if(!btn)return;
+    btn.classList.toggle("hidden",!state.pinHash);
+    btn.textContent=cloudAuth.linkedUserId?"Googleでパスコードを再設定":"Google再設定（未連携）";
+  }
+  function deviceId(){
+    let id=localStorage.getItem(DEVICE_KEY)||"";
+    if(!id){
+      id=crypto.randomUUID?.()||("device-"+randomSecret(18));
+      localStorage.setItem(DEVICE_KEY,id);
+    }
+    return id;
+  }
+  async function cloudFetch(path,options={}){
+    const base=pushServerUrl();
+    if(!base)throw new Error("Sync server is not configured");
+    const headers={"Content-Type":"application/json",...(options.headers||{})};
+    if(options.auth!==false&&cloudAuth.sessionToken)headers.Authorization="Bearer "+cloudAuth.sessionToken;
+    const response=await fetch(base+path,{...options,headers,cache:"no-store"});
+    let data={};
+    try{data=await response.json();}catch{}
+    if(!response.ok){
+      if(response.status===401&&options.auth!==false){
+        cloudAuth.sessionToken="";
+        cloudAuth.expiresAt=null;
+        localStorage.setItem(AUTH_KEY,JSON.stringify(cloudAuth));
+        renderCloudSyncStatus();
+      }
+      throw new Error(data.error||"Cloud sync error");
+    }
+    return data;
+  }
+  function setCloudSyncText(text){
+    const el=$("#cloudSyncStatus");if(el)el.textContent=text;
+  }
+  function renderCloudSyncStatus(){
+    const badge=$("#cloudSyncBadge"),status=$("#cloudSyncStatus"),profile=$("#cloudProfile"),
+      avatar=$("#cloudAvatar"),name=$("#cloudProfileName"),email=$("#cloudProfileEmail"),
+      signIn=$("#googleSignInButton"),syncBtn=$("#cloudSyncNowBtn"),logoutBtn=$("#cloudLogoutBtn");
+    if(!badge||!status)return;
+    badge.classList.remove("connected","waiting","denied");
+    const user=cloudAuth.user||null;
+    if(profile)profile.classList.toggle("hidden",!user);
+    if(avatar){
+      avatar.classList.toggle("hidden",!user?.picture);
+      if(user?.picture)avatar.src=user.picture;
+    }
+    if(name)name.textContent=user?.name||"Googleアカウント";
+    if(email)email.textContent=user?.email||"";
+    if(!googleConfig){
+      badge.textContent="確認中";badge.classList.add("waiting");
+      status.textContent="Googleログイン設定を確認中…";
+      if(syncBtn)syncBtn.classList.add("hidden");
+      if(logoutBtn)logoutBtn.classList.add("hidden");
+      return;
+    }
+    if(!googleConfig.googleAuthReady){
+      badge.textContent="設定待ち";badge.classList.add("waiting");
+      status.textContent="GoogleログインのClient IDをRenderに設定すると有効になるよ。";
+      if(signIn)signIn.classList.add("hidden");
+      if(syncBtn)syncBtn.classList.add("hidden");
+      if(logoutBtn)logoutBtn.classList.add("hidden");
+      return;
+    }
+    if(cloudAuth.sessionToken){
+      badge.textContent=cloudSyncInProgress?"同期中":"接続済み";
+      badge.classList.add(cloudSyncInProgress?"waiting":"connected");
+      status.textContent=cloudSyncInProgress
+        ?"クラウドと同期してるよ…"
+        :cloudAuth.lastSyncAt
+          ?"最終同期："+new Date(cloudAuth.lastSyncAt).toLocaleString("ja-JP")
+          :"Googleアカウントに接続済み。";
+      if(signIn)signIn.classList.add("hidden");
+      if(syncBtn)syncBtn.classList.remove("hidden");
+      if(logoutBtn)logoutBtn.classList.remove("hidden");
+    }else{
+      badge.textContent=cloudAuth.linkedUserId?"再ログイン":"未接続";
+      badge.classList.add("waiting");
+      status.textContent=cloudAuth.linkedUserId
+        ?"同期は停止中。Googleで再ログインすると再開するよ。"
+        :"GoogleでログインするとTODO・予定・設定を別端末から復元できるよ。";
+      if(signIn)signIn.classList.remove("hidden");
+      if(syncBtn)syncBtn.classList.add("hidden");
+      if(logoutBtn)logoutBtn.classList.add("hidden");
+      if(googleIdentityReady)renderGoogleButtons();
+    }
+  }
+  function loadGoogleIdentityScript(){
+    if(window.google?.accounts?.id)return Promise.resolve();
+    if(googleScriptPromise)return googleScriptPromise;
+    googleScriptPromise=new Promise((resolve,reject)=>{
+      const existing=document.querySelector('script[data-emiruto-google]');
+      if(existing){
+        existing.addEventListener("load",resolve,{once:true});
+        existing.addEventListener("error",reject,{once:true});
+        return;
+      }
+      const script=document.createElement("script");
+      script.src="https://accounts.google.com/gsi/client";
+      script.async=true;script.defer=true;script.dataset.emirutoGoogle="1";
+      script.onload=resolve;script.onerror=()=>reject(new Error("Google Identity Services failed to load"));
+      document.head.appendChild(script);
+    });
+    return googleScriptPromise;
+  }
+  function renderGoogleButtons(){
+    if(!googleIdentityReady||!window.google?.accounts?.id)return;
+    const settingsTarget=$("#googleSignInButton");
+    const recoveryTarget=$("#googleRecoveryButton");
+    [settingsTarget,recoveryTarget].forEach(target=>{
+      if(!target)return;
+      target.innerHTML="";
+      try{
+        google.accounts.id.renderButton(target,{
+          type:"standard",theme:"outline",size:"large",shape:"pill",
+          text:"signin_with",logo_alignment:"left",width:280
+        });
+      }catch{}
+    });
+  }
+  async function refreshGoogleConfig(){
+    const base=pushServerUrl();
+    if(!base){googleConfig={googleAuthReady:false,googleClientId:null};renderCloudSyncStatus();return;}
+    try{
+      googleConfig=await cloudFetch("/api/config",{method:"GET",auth:false});
+      if(googleConfig.googleAuthReady&&googleConfig.googleClientId){
+        await loadGoogleIdentityScript();
+        google.accounts.id.initialize({
+          client_id:googleConfig.googleClientId,
+          callback:handleGoogleCredential,
+          ux_mode:"popup",
+          auto_select:false,
+          cancel_on_tap_outside:true,
+          itp_support:true
+        });
+        googleIdentityReady=true;
+        renderGoogleButtons();
+      }
+    }catch(error){
+      console.error(error);
+      googleConfig={googleAuthReady:false,googleClientId:null};
+    }
+    renderCloudSyncStatus();
+    showLockRecoveryState();
+  }
+  async function handleGoogleCredential(response){
+    const credential=String(response?.credential||"");
+    if(!credential)return;
+    const recoveryOpen=!!$("#googleRecoveryDialog")?.open;
+    const recoveryStatus=$("#googleRecoveryStatus");
+    try{
+      if(recoveryStatus&&recoveryOpen)recoveryStatus.textContent="Googleアカウントを確認中…";
+      const result=await cloudFetch("/api/auth/google",{
+        method:"POST",auth:false,
+        body:JSON.stringify({credential})
+      });
+      const nextUser=result.user||{};
+      if(recoveryOpen){
+        if(!cloudAuth.linkedUserId||nextUser.id!==cloudAuth.linkedUserId){
+          if(recoveryStatus)recoveryStatus.textContent="この端末に連携したGoogleアカウントと違うよ。";
+          return;
+        }
+        cloudAuth={...cloudAuth,sessionToken:result.sessionToken,expiresAt:result.expiresAt,user:nextUser};
+        saveCloudAuth();
+        $("#googleRecoveryDialog").close();
+        state.pinHash=null;
+        pinStage="setup";setupPin="";pinBuffer="";
+        $("#lockMessage").textContent="Google確認できたよ。新しい4桁を決めてね";
+        updatePinDots();
+        return;
+      }
+      if(cloudAuth.linkedUserId&&cloudAuth.linkedUserId!==nextUser.id){
+        const ok=confirm("別のGoogleアカウントに同期先を切り替える？");
+        if(!ok)return;
+      }
+      cloudAuth={
+        linkedUserId:nextUser.id,
+        sessionToken:result.sessionToken,
+        expiresAt:result.expiresAt,
+        user:nextUser,
+        lastSyncAt:cloudAuth.lastSyncAt||null
+      };
+      saveCloudAuth();
+      await syncCloudNow(true);
+      renderGoogleButtons();
+    }catch(error){
+      console.error(error);
+      if(recoveryStatus&&recoveryOpen)recoveryStatus.textContent="Googleログインに失敗したよ。もう一度試してね。";
+      else showReaction("Googleログインできなかったよ","少し時間を置いて、もう一度試してね。","gentle");
+    }
+  }
+  function openGoogleRecovery(){
+    if(!cloudAuth.linkedUserId){
+      $("#lockMessage").textContent="Google未連携だよ。PIN入力後、設定から先にGoogle連携してね";
+      return;
+    }
+    if(!googleConfig?.googleAuthReady||!googleIdentityReady){
+      $("#lockMessage").textContent="Googleログイン設定を準備中。少し待ってもう一度押してね";
+      refreshGoogleConfig();
+      return;
+    }
+    const dialog=$("#googleRecoveryDialog");
+    $("#googleRecoveryStatus").textContent="連携済みのGoogleアカウントで本人確認してね。";
+    dialog.showModal();
+    setTimeout(renderGoogleButtons,0);
+  }
+  async function logoutCloud(){
+    if(cloudAuth.sessionToken){
+      try{await cloudFetch("/api/auth/logout",{method:"POST",body:"{}"});}catch{}
+    }
+    cloudAuth={...cloudAuth,sessionToken:"",expiresAt:null,lastSyncAt:null};
+    saveCloudAuth();
+    renderGoogleButtons();
+    showReaction("同期からログアウトしたよ","端末のデータはそのまま残ってるよ。","normal");
+  }
+  function applyCloudPayload(data,modifiedAt){
+    if(!data||typeof data!=="object")return;
+    const localOnly={
+      pinHash:state.pinHash,
+      backgroundPush:state.backgroundPush,
+      notificationLog:state.notificationLog,
+      selectedDate:state.selectedDate,
+      calendarCursor:state.calendarCursor,
+      minimalOnly:state.minimalOnly,
+      reactionHistory:state.reactionHistory,
+      visualHistory:state.visualHistory,
+      oshiImage:state.oshiImage
+    };
+    cloudSyncHydrating=true;
+    state={...state,...data,...localOnly,cloudModifiedAt:modifiedAt||state.cloudModifiedAt};
+    ensureNotificationState();ensureBackgroundPushState();ensureReactionState();
+    cloudLastFingerprint=cloudFingerprint(state);
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    cloudSyncHydrating=false;
+    applyTheme();renderAll();queuePushScheduleSync();
+  }
+  async function syncCloudNow(showFeedback=false){
+    if(!cloudAuth.sessionToken||cloudSyncInProgress||!pushServerUrl())return;
+    cloudSyncInProgress=true;renderCloudSyncStatus();
+    try{
+      const remote=await cloudFetch("/api/sync",{method:"GET"});
+      let localModified=state.cloudModifiedAt;
+      if(!localModified){
+        localModified=new Date().toISOString();
+        state.cloudModifiedAt=localModified;
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      }
+      const localMs=Date.parse(localModified)||0;
+      const remoteMs=remote.hasData?(Date.parse(remote.modifiedAt)||0):0;
+      if(remote.hasData&&remoteMs>localMs){
+        applyCloudPayload(remote.data,remote.modifiedAt);
+      }else if(!remote.hasData||localMs>remoteMs){
+        const result=await cloudFetch("/api/sync",{
+          method:"PUT",
+          body:JSON.stringify({
+            data:cloudPayloadFromState(state),
+            modifiedAt:state.cloudModifiedAt,
+            deviceId:deviceId()
+          })
+        });
+        if(result.winner==="server"){
+          applyCloudPayload(result.data,result.modifiedAt);
+        }
+      }else if(remote.hasData&&cloudFingerprint(state)!==JSON.stringify(remote.data)){
+        applyCloudPayload(remote.data,remote.modifiedAt);
+      }
+      cloudAuth.lastSyncAt=new Date().toISOString();
+      localStorage.setItem(AUTH_KEY,JSON.stringify(cloudAuth));
+      if(showFeedback)showReaction("同期できたよ🧡","Googleアカウントに最新データを保存したよ。","happy");
+    }catch(error){
+      console.error(error);
+      if(showFeedback)showReaction("同期できなかったよ","通信状態かGoogleログインを確認してね。","gentle");
+    }finally{
+      cloudSyncInProgress=false;renderCloudSyncStatus();
+    }
+  }
+  function queueCloudSync(){
+    if(!cloudAuth.sessionToken||cloudSyncHydrating)return;
+    clearTimeout(cloudSyncTimer);
+    cloudSyncTimer=setTimeout(()=>syncCloudNow(false),1200);
+  }
+  async function initCloudSync(){
+    await refreshGoogleConfig();
+    if(!cloudAuth.sessionToken)return;
+    try{
+      const me=await cloudFetch("/api/me",{method:"GET"});
+      if(me?.user){
+        cloudAuth.user=me.user;
+        cloudAuth.linkedUserId=cloudAuth.linkedUserId||me.user.id;
+        localStorage.setItem(AUTH_KEY,JSON.stringify(cloudAuth));
+      }
+      await syncCloudNow(false);
+    }catch(error){
+      console.warn("Cloud session unavailable",error);
+    }
+    renderCloudSyncStatus();
   }
 
   function ensureBackgroundPushState(){
@@ -1171,6 +1532,7 @@
     renderOshiLibrary();
     renderAdoptedCatalog();
     renderNotificationSettings();
+    renderCloudSyncStatus();
   }
   async function handleOshiUpload(e){
     const files=[...(e.target.files||[])]; if(!files.length)return;
