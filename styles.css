@@ -50,3 +50,6 @@ body.stealth .brand-mark{background:#fff;color:var(--orange);box-shadow:none;bor
 .oshi-thumb button{position:absolute;right:5px;top:5px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(28,20,16,.66);color:#fff;font-size:.75rem}
 .reaction-avatar{overflow:hidden}
 .reaction-avatar img{width:100%;height:100%;object-fit:cover}
+
+.builtin-thumb{outline:1px solid #f2c79f}
+.builtin-badge{position:absolute;left:5px;bottom:5px;padding:3px 6px;border-radius:999px;background:rgba(255,255,255,.9);color:#a65b27;font-size:.62rem;font-weight:800;box-shadow:0 2px 7px rgba(65,42,25,.12)}
