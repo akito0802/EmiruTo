@@ -7,7 +7,7 @@ on:
     paths:
       - ".github/workflows/push-sender.yml"
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
   workflow_dispatch:
 
 permissions:
