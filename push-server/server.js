@@ -310,12 +310,26 @@ initDb()
   .then(() => app.listen(PORT, "0.0.0.0", () => {
     console.log(`EmiruTo push API listening on ${PORT}`);
 
-    // While the free Render service is awake, check due notifications every minute.
-    // GitHub Actions pings /api/send-due every 5 minutes to keep the service active.
-    const runSender = () => sendDueNotifications().catch(error => console.error("Scheduled push sender failed", error));
+    // Check due notifications every minute while the service is running.
+    const runSender = () => sendDueNotifications()
+      .then(result => console.log("Internal push sender", result))
+      .catch(error => console.error("Scheduled push sender failed", error));
     runSender();
     const senderTimer = setInterval(runSender, 60_000);
     senderTimer.unref?.();
+
+    // Render Free spins down after 15 minutes without inbound traffic.
+    // A tiny self-request every 10 minutes keeps this hobby push service available
+    // without depending on GitHub's best-effort scheduled workflow timing.
+    const publicOrigin = String(process.env.PUBLIC_ORIGIN || "https://emiruto-push-api.onrender.com").replace(/\/+$/,"");
+    const keepAlive = () => fetch(publicOrigin + "/api/health", {
+      headers: { "User-Agent": "EmiruTo-KeepAlive/1.0" }
+    }).then(r => {
+      if(!r.ok) throw new Error("keepalive " + r.status);
+      console.log("Keepalive ok");
+    }).catch(error => console.warn("Keepalive failed", error?.message || error));
+    const keepAliveTimer = setInterval(keepAlive, 10 * 60_000);
+    keepAliveTimer.unref?.();
   }))
   .catch(error => {
     console.error(error);
