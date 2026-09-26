@@ -700,6 +700,266 @@
     el.innerHTML=cards.join("");
   }
 
+  function ensureBackgroundPushState(){
+    state.backgroundPush={
+      enabled:false,clientId:"",secret:"",lastSyncAt:null,
+      ...(state.backgroundPush||{})
+    };
+  }
+  function pushServerUrl(){
+    return String(window.EMIRUTO_PUSH_SERVER||"").trim().replace(/\/+$/,"");
+  }
+  function supportsBackgroundPush(){
+    return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  }
+  function isStandaloneApp(){
+    return !!(window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone===true);
+  }
+  function isIOSLike(){
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  }
+  function randomSecret(bytes=32){
+    const raw=new Uint8Array(bytes);crypto.getRandomValues(raw);
+    let bin="";raw.forEach(b=>bin+=String.fromCharCode(b));
+    return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  }
+  function ensurePushCredentials(){
+    ensureBackgroundPushState();
+    if(!state.backgroundPush.clientId){
+      state.backgroundPush.clientId=(crypto.randomUUID?.()||("emiruto-"+randomSecret(18))).replace(/[^a-zA-Z0-9_-]/g,"");
+    }
+    if(!state.backgroundPush.secret) state.backgroundPush.secret=randomSecret(32);
+  }
+  function base64UrlToUint8Array(value){
+    const padding="=".repeat((4-value.length%4)%4);
+    const base64=(value+padding).replace(/-/g,"+").replace(/_/g,"/");
+    const raw=atob(base64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+  }
+  async function pushFetch(path,options={}){
+    const base=pushServerUrl();
+    if(!base) throw new Error("Push server is not configured");
+    const response=await fetch(base+path,{
+      ...options,
+      headers:{"Content-Type":"application/json",...(options.headers||{})}
+    });
+    if(!response.ok){
+      let message="Push server error";
+      try{message=(await response.json()).error||message;}catch{}
+      throw new Error(message);
+    }
+    return response.json();
+  }
+  function renderBackgroundPushStatus(){
+    ensureBackgroundPushState();
+    const badge=$("#backgroundPushBadge"),btn=$("#backgroundPushBtn"),status=$("#backgroundPushStatus");
+    if(!badge||!btn||!status)return;
+    badge.classList.remove("connected","waiting","denied");
+    const server=pushServerUrl();
+
+    if(!supportsBackgroundPush()){
+      badge.textContent="非対応";badge.classList.add("denied");
+      btn.disabled=true;btn.textContent="この環境では利用できません";
+      status.textContent="このブラウザは標準Web Pushに対応していません。";
+      return;
+    }
+    if(isIOSLike()&&!isStandaloneApp()){
+      badge.textContent="ホーム画面待ち";badge.classList.add("waiting");
+      btn.disabled=false;btn.textContent="使い方を確認";
+      status.textContent="iPhone / iPadではEmiruToをホーム画面に追加し、そのアイコンから開くとバックグラウンド通知を許可できます。";
+      return;
+    }
+    if(!server){
+      badge.textContent="サーバー待ち";badge.classList.add("waiting");
+      btn.disabled=true;btn.textContent="配信サーバー接続待ち";
+      status.textContent="アプリ側のWeb Push対応は完了済み。配信サーバーをデプロイすると有効化できます。";
+      return;
+    }
+    if(state.backgroundPush.enabled){
+      badge.textContent="接続済み";badge.classList.add("connected");
+      btn.disabled=false;btn.textContent="バックグラウンド通知を解除";
+      status.textContent=state.backgroundPush.lastSyncAt
+        ?"通知予定を同期済み："+new Date(state.backgroundPush.lastSyncAt).toLocaleString("ja-JP")
+        :"Pushサーバーに接続済み。通知予定を同期しています。";
+    }else{
+      badge.textContent="利用可能";badge.classList.add("waiting");
+      btn.disabled=false;btn.textContent="バックグラウンド通知を有効化";
+      status.textContent="有効化すると、EmiruToを閉じていても通知を受け取れます。";
+    }
+  }
+  async function refreshBackgroundPushStatus(){
+    renderBackgroundPushStatus();
+    const server=pushServerUrl();if(!server)return;
+    try{
+      const r=await fetch(server+"/api/health",{cache:"no-store"});
+      if(!r.ok)throw new Error("offline");
+    }catch{
+      const badge=$("#backgroundPushBadge"),status=$("#backgroundPushStatus");
+      if(badge&&!state.backgroundPush?.enabled){badge.textContent="サーバー停止中";badge.classList.add("denied");}
+      if(status)status.textContent="Pushサーバーに接続できません。少し時間を置いて再試行してください。";
+    }
+  }
+  async function toggleBackgroundPush(){
+    ensureBackgroundPushState();
+    if(isIOSLike()&&!isStandaloneApp()){
+      showReaction("ホーム画面から開いてね","iPhoneでは共有メニューの「ホーム画面に追加」でEmiruToを追加して、そのアイコンから開くと通知を有効化できるよ。","gentle");
+      return;
+    }
+    if(state.backgroundPush.enabled) await disableBackgroundPush();
+    else await enableBackgroundPush();
+  }
+  async function enableBackgroundPush(){
+    if(!supportsBackgroundPush())return;
+    if(!pushServerUrl()){renderBackgroundPushStatus();return;}
+    try{
+      let permission=Notification.permission;
+      if(permission!=="granted") permission=await Notification.requestPermission();
+      if(permission!=="granted"){renderNotificationSettings();return;}
+
+      const keyData=await pushFetch("/api/vapid-public-key",{method:"GET",headers:{}});
+      const registration=await navigator.serviceWorker.ready;
+      let subscription=await registration.pushManager.getSubscription();
+      if(!subscription){
+        subscription=await registration.pushManager.subscribe({
+          userVisibleOnly:true,
+          applicationServerKey:base64UrlToUint8Array(keyData.publicKey)
+        });
+      }
+      ensurePushCredentials();
+      await pushFetch("/api/subscribe",{
+        method:"POST",
+        body:JSON.stringify({
+          clientId:state.backgroundPush.clientId,
+          secret:state.backgroundPush.secret,
+          subscription:subscription.toJSON()
+        })
+      });
+      state.backgroundPush.enabled=true;
+      ensureNotificationState();state.notifications.enabled=true;
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      await syncBackgroundPushSchedule();
+      renderNotificationSettings();
+      showReaction("バックグラウンド通知ON🧡","EmiruToを閉じていても、設定した時間に通知できるようになったよ。","happy");
+    }catch(error){
+      console.error(error);
+      renderBackgroundPushStatus();
+      showReaction("通知の接続に失敗したよ","Pushサーバーか通知設定を確認して、もう一度試してね。","gentle");
+    }
+  }
+  async function disableBackgroundPush(){
+    ensureBackgroundPushState();
+    try{
+      if(pushServerUrl()&&state.backgroundPush.clientId&&state.backgroundPush.secret){
+        await pushFetch("/api/unsubscribe",{
+          method:"POST",
+          body:JSON.stringify({clientId:state.backgroundPush.clientId,secret:state.backgroundPush.secret})
+        }).catch(()=>{});
+      }
+      const registration=await navigator.serviceWorker?.ready;
+      const subscription=await registration?.pushManager?.getSubscription();
+      if(subscription)await subscription.unsubscribe();
+    }catch{}
+    state.backgroundPush.enabled=false;state.backgroundPush.lastSyncAt=null;
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    renderNotificationSettings();
+  }
+  function pushDateTime(date,time){
+    if(!date||!time)return null;
+    const d=new Date(date+"T"+time+":00");
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  function addPushScheduleItem(items,id,fireAt,kind,data){
+    if(!(fireAt instanceof Date)||Number.isNaN(fireAt.getTime()))return;
+    const now=Date.now(),max=now+30*86400000;
+    if(fireAt.getTime()<now+15000||fireAt.getTime()>max)return;
+    const copy=notificationCopy(kind,data);
+    items.push({
+      id,fireAt:fireAt.toISOString(),title:copy.title,body:copy.body,
+      tag:"emiruto-"+id,url:"https://akito0802.github.io/EmiruTo/"
+    });
+  }
+  function pendingCountForDate(ds,offset){
+    return state.tasks.filter(t=>{
+      if(t.completed||t.someday)return false;
+      if(t.dueDate)return t.dueDate<=ds;
+      return offset===0&&t.today;
+    }).length;
+  }
+  function buildBackgroundPushSchedule(){
+    ensureNotificationState();
+    const n=state.notifications,items=[];
+    if(!n.enabled||state.quiet)return items;
+
+    for(let offset=0;offset<14;offset++){
+      const ds=addDays(today(),offset);
+      const pending=pendingCountForDate(ds,offset);
+      if(n.morningEnabled){
+        addPushScheduleItem(items,"morning-"+ds,pushDateTime(ds,n.morningTime),"morning",{count:pending});
+      }
+      if(n.unfinishedEnabled&&pending>0){
+        addPushScheduleItem(items,"unfinished-"+ds,pushDateTime(ds,n.unfinishedTime),"unfinished",{count:pending});
+      }
+      if(n.recapEnabled){
+        const done=offset===0?state.history.filter(h=>h.type==="task_completed"&&h.date===ds).length:0;
+        const tomorrowDate=addDays(ds,1);
+        const tomorrow=state.tasks.filter(t=>!t.completed&&!t.someday&&t.dueDate===tomorrowDate).length;
+        addPushScheduleItem(items,"recap-"+ds,pushDateTime(ds,n.recapTime),"recap",{done,tomorrow});
+      }
+    }
+
+    if(n.deadlineEnabled){
+      const thresholds=[Number(n.deadline1||0),Number(n.deadline2||0)].filter(x=>x>=0);
+      state.tasks.filter(t=>!t.completed&&!t.someday&&t.dueDate&&t.dueTime).forEach(t=>{
+        const due=pushDateTime(t.dueDate,t.dueTime);if(!due)return;
+        thresholds.forEach(minutes=>{
+          const fire=new Date(due.getTime()-minutes*60000);
+          addPushScheduleItem(items,`deadline-${t.id}-${minutes}-${due.getTime()}`,fire,"deadline",{title:t.title,minutes});
+        });
+      });
+    }
+
+    if(n.eventEnabled){
+      const minutes=Math.max(0,Number(n.eventMinutes||0));
+      state.events.filter(e=>e.date&&e.start).forEach(e=>{
+        const start=pushDateTime(e.date,e.start);if(!start)return;
+        const fire=new Date(start.getTime()-minutes*60000);
+        addPushScheduleItem(items,`event-${e.id}-${minutes}-${start.getTime()}`,fire,"event",{title:e.title,minutes});
+      });
+    }
+    return items.slice(0,300);
+  }
+  async function syncBackgroundPushSchedule(){
+    ensureBackgroundPushState();
+    if(!state.backgroundPush.enabled||!pushServerUrl()||pushSyncInProgress)return;
+    pushSyncInProgress=true;
+    try{
+      ensurePushCredentials();
+      const notifications=buildBackgroundPushSchedule();
+      await pushFetch("/api/schedule",{
+        method:"POST",
+        body:JSON.stringify({
+          clientId:state.backgroundPush.clientId,
+          secret:state.backgroundPush.secret,
+          notifications
+        })
+      });
+      state.backgroundPush.lastSyncAt=new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      renderBackgroundPushStatus();
+    }catch(error){
+      console.warn("Background push sync failed",error);
+      const status=$("#backgroundPushStatus");
+      if(status)status.textContent="通知予定の同期に失敗しました。次回起動時に再試行します。";
+    }finally{
+      pushSyncInProgress=false;
+    }
+  }
+  function queuePushScheduleSync(){
+    clearTimeout(pushSyncTimer);
+    ensureBackgroundPushState();
+    if(!state.backgroundPush.enabled)return;
+    pushSyncTimer=setTimeout(syncBackgroundPushSchedule,1200);
+  }
+
   const NOTIFICATION_DEFAULTS = {
     enabled:false,style:"emiruto",
     morningEnabled:true,morningTime:"08:00",
