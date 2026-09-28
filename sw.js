@@ -1,9 +1,9 @@
-const CACHE="emiruto-v27";
+const CACHE="emiruto-v28";
 const ASSETS=[
   "./",
   "./index.html",
   "./styles.css?v=20260927-03",
-  "./app.js?v=20260927-05",
+  "./app.js?v=20260928-01",
   "./push-config.js?v=20260926-22",
   "./manifest.webmanifest",
   "./icon.svg",
@@ -57,6 +57,16 @@ const ASSETS=[
   "./assets/oshi/adopted/v28.jpg?v=20260926-14",
   "./assets/oshi/adopted/v29.jpg?v=20260926-14",
   "./assets/oshi/adopted/v30.jpg?v=20260926-14",
+  "./assets/oshi/adopted/v31.webp?v=20260928-01",
+  "./assets/oshi/adopted/v32.webp?v=20260928-01",
+  "./assets/oshi/adopted/v33.webp?v=20260928-01",
+  "./assets/oshi/adopted/v34.webp?v=20260928-01",
+  "./assets/oshi/adopted/v35.webp?v=20260928-01",
+  "./assets/oshi/adopted/v36.webp?v=20260928-01",
+  "./assets/oshi/adopted/v37.webp?v=20260928-01",
+  "./assets/oshi/adopted/v38.webp?v=20260928-01",
+  "./assets/oshi/adopted/v39.webp?v=20260928-01",
+  "./assets/oshi/adopted/v40.webp?v=20260928-01",
   "./assets/oshi/adopted/v7.jpg?v=20260927-02",
   "./assets/oshi/adopted/v10.jpg?v=20260927-02",
   "./assets/oshi/adopted/v14.jpg?v=20260927-02"
