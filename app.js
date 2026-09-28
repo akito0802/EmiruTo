@@ -792,8 +792,33 @@
   }
   function setOshiElement(imgEl,fallbackEl,src){
     if(!imgEl||!fallbackEl)return;
-    imgEl.classList.toggle("hidden",!src); fallbackEl.classList.toggle("hidden",!!src);
-    if(src) imgEl.src=src;
+    const showFallback=()=>{
+      imgEl.classList.add("hidden");
+      fallbackEl.classList.remove("hidden");
+    };
+    const showImage=()=>{
+      imgEl.classList.remove("hidden");
+      fallbackEl.classList.add("hidden");
+    };
+    imgEl.onload=showImage;
+    imgEl.onerror=()=>{
+      const safe=A+"v14.jpg?v=20260928-01";
+      if(imgEl.dataset.safeRetry!=="1"&&src!==safe){
+        imgEl.dataset.safeRetry="1";
+        imgEl.src=safe;
+        return;
+      }
+      showFallback();
+    };
+    imgEl.dataset.safeRetry="0";
+    if(!src){
+      imgEl.removeAttribute("src");
+      showFallback();
+      return;
+    }
+    // 読み込み完了までは壊れた画像アイコンを出さず、フォールバックを表示する
+    showFallback();
+    imgEl.src=src;
   }
   function homeOshiCategory(hour,gentle,overdueCount=0,rate=0){
     const md=today().slice(5);
